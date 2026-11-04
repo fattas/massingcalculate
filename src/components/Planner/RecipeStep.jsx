@@ -2,7 +2,7 @@ import { useState } from 'react';
 import ItemSearch from '../Common/ItemSearch';
 import ItemIcon from '../Common/ItemIcon';
 import { calculateStep, formatNumber, fmtWL } from '../../utils/calculations';
-import { FiTrash2, FiChevronDown, FiChevronUp, FiCpu } from 'react-icons/fi';
+import { FiTrash2, FiChevronDown, FiChevronUp, FiCpu, FiPlus } from 'react-icons/fi';
 
 function PriceInput({ price, priceFormat, onPriceChange, onFormatChange }) {
   return (
@@ -57,15 +57,111 @@ export default function RecipeStep({
     }
   };
 
-  // Calculate biaya preview for each seed
-  const seed1Qty = step.seed1Qty || step.seedsPlanted || 0;
-  const seed2Qty = step.seed2Qty || step.seedsPlanted || 0;
-  const seed1Cost = step.seed1Price > 0 && seed1Qty > 0
-    ? (step.seed1PriceFormat === 'each' ? seed1Qty * step.seed1Price : seed1Qty / step.seed1Price)
+  // Seed 1 Extra Purchases handlers
+  const handleAddSeed1Extra = () => {
+    const extras = Array.isArray(step.seed1ExtraPurchases) ? step.seed1ExtraPurchases : [];
+    const newExtra = {
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
+      qty: 0,
+      price: 0,
+      priceFormat: 'perWL',
+    };
+    onUpdate({
+      ...step,
+      seed1ExtraPurchases: [...extras, newExtra],
+    });
+  };
+
+  const handleUpdateSeed1Extra = (id, field, value) => {
+    const extras = (step.seed1ExtraPurchases || []).map((p) => {
+      if (p.id === id) {
+        return { ...p, [field]: value };
+      }
+      return p;
+    });
+    onUpdate({
+      ...step,
+      seed1ExtraPurchases: extras,
+    });
+  };
+
+  const handleRemoveSeed1Extra = (id) => {
+    const extras = (step.seed1ExtraPurchases || []).filter((p) => p.id !== id);
+    onUpdate({
+      ...step,
+      seed1ExtraPurchases: extras,
+    });
+  };
+
+  // Seed 2 Extra Purchases handlers
+  const handleAddSeed2Extra = () => {
+    const extras = Array.isArray(step.seed2ExtraPurchases) ? step.seed2ExtraPurchases : [];
+    const newExtra = {
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
+      qty: 0,
+      price: 0,
+      priceFormat: 'perWL',
+    };
+    onUpdate({
+      ...step,
+      seed2ExtraPurchases: [...extras, newExtra],
+    });
+  };
+
+  const handleUpdateSeed2Extra = (id, field, value) => {
+    const extras = (step.seed2ExtraPurchases || []).map((p) => {
+      if (p.id === id) {
+        return { ...p, [field]: value };
+      }
+      return p;
+    });
+    onUpdate({
+      ...step,
+      seed2ExtraPurchases: extras,
+    });
+  };
+
+  const handleRemoveSeed2Extra = (id) => {
+    const extras = (step.seed2ExtraPurchases || []).filter((p) => p.id !== id);
+    onUpdate({
+      ...step,
+      seed2ExtraPurchases: extras,
+    });
+  };
+
+  // Calculate biaya preview for each seed and its batches
+  const seed1ExtraList = Array.isArray(step.seed1ExtraPurchases) ? step.seed1ExtraPurchases : [];
+  const primarySeed1Qty = step.seed1Qty || (seed1ExtraList.length === 0 ? step.seedsPlanted : 0) || 0;
+  const primarySeed1Cost = step.seed1Price > 0 && primarySeed1Qty > 0
+    ? (step.seed1PriceFormat === 'each' ? primarySeed1Qty * step.seed1Price : primarySeed1Qty / step.seed1Price)
     : 0;
-  const seed2Cost = step.seed2Price > 0 && seed2Qty > 0
-    ? (step.seed2PriceFormat === 'each' ? seed2Qty * step.seed2Price : seed2Qty / step.seed2Price)
+
+  let totalSeed1Qty = primarySeed1Qty;
+  let totalSeed1Cost = primarySeed1Cost;
+  seed1ExtraList.forEach((extra) => {
+    const q = parseInt(extra.qty) || 0;
+    totalSeed1Qty += q;
+    if (extra.price > 0 && q > 0) {
+      totalSeed1Cost += extra.priceFormat === 'each' ? q * extra.price : q / extra.price;
+    }
+  });
+
+  const seed2ExtraList = Array.isArray(step.seed2ExtraPurchases) ? step.seed2ExtraPurchases : [];
+  const primarySeed2Qty = step.seed2Qty || (seed2ExtraList.length === 0 ? step.seedsPlanted : 0) || 0;
+  const primarySeed2Cost = step.seed2Price > 0 && primarySeed2Qty > 0
+    ? (step.seed2PriceFormat === 'each' ? primarySeed2Qty * step.seed2Price : primarySeed2Qty / step.seed2Price)
     : 0;
+
+  let totalSeed2Qty = primarySeed2Qty;
+  let totalSeed2Cost = primarySeed2Cost;
+  seed2ExtraList.forEach((extra) => {
+    const q = parseInt(extra.qty) || 0;
+    totalSeed2Qty += q;
+    if (extra.price > 0 && q > 0) {
+      totalSeed2Cost += extra.priceFormat === 'each' ? q * extra.price : q / extra.price;
+    }
+  });
+
   const fuelQty = step.fuelNeeded || 0;
   const fuelPrice = step.fuelPrice || step.fuelCostPerUnit || 0;
   const fuelPriceFormat = step.fuelPriceFormat || (step.fuelCostPerUnit > 0 ? 'each' : 'perWL');
@@ -143,70 +239,240 @@ export default function RecipeStep({
           {/* Splicing Recipe - Seed 1 + Seed 2 with individual prices & qty */}
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3">
             {/* Seed 1 */}
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 1</label>
-              <ItemSearch
-                value={step.seedName1}
-                onChange={(item) => handleItemSelect('seedName1', item)}
-                placeholder="Cari seed 1..."
-              />
-              <div className="mt-2 space-y-1.5">
-                <label className="block text-xs font-medium text-gray-400">Qty Beli Seed 1</label>
-                <input
-                  type="number"
-                  value={step.seed1Qty || ''}
-                  onChange={(e) => handleFieldChange('seed1Qty', parseInt(e.target.value) || 0)}
-                  placeholder="Jumlah seed 1 dibeli"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-                <label className="block text-xs font-medium text-gray-400">Harga Beli Seed 1</label>
-                <PriceInput
-                  price={step.seed1Price}
-                  priceFormat={step.seed1PriceFormat}
-                  onPriceChange={(v) => handleFieldChange('seed1Price', v)}
-                  onFormatChange={(v) => handleFieldChange('seed1PriceFormat', v)}
-                />
-                {seed1Cost > 0 && (
-                  <p className="text-xs text-yellow-400">
-                    Biaya: {fmtWL(seed1Cost)} WL
-                  </p>
-                )}
+            <div className="p-3 bg-gray-750/30 rounded-xl border border-gray-700/60 flex flex-col justify-between space-y-3">
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 1</label>
+                  <ItemSearch
+                    value={step.seedName1}
+                    onChange={(item) => handleItemSelect('seedName1', item)}
+                    placeholder="Cari seed 1..."
+                  />
+                </div>
+
+                {/* Pembelian Utama */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-medium text-gray-400">
+                      Qty Beli Seed 1 {seed1ExtraList.length > 0 && <span className="text-[11px] text-gray-500">(Utama)</span>}
+                    </label>
+                    {primarySeed1Cost > 0 && (
+                      <span className="text-[11px] text-yellow-400 font-medium">
+                        {fmtWL(primarySeed1Cost)} WL
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="number"
+                    value={step.seed1Qty || ''}
+                    onChange={(e) => handleFieldChange('seed1Qty', parseInt(e.target.value) || 0)}
+                    placeholder="Jumlah seed 1 dibeli"
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                  <label className="block text-xs font-medium text-gray-400">
+                    Harga Beli Seed 1 {seed1ExtraList.length > 0 && <span className="text-[11px] text-gray-500">(Utama)</span>}
+                  </label>
+                  <PriceInput
+                    price={step.seed1Price}
+                    priceFormat={step.seed1PriceFormat}
+                    onPriceChange={(v) => handleFieldChange('seed1Price', v)}
+                    onFormatChange={(v) => handleFieldChange('seed1PriceFormat', v)}
+                  />
+                </div>
+
+                {/* Batch Pembelian Tambahan Dinamis */}
+                {seed1ExtraList.map((extra, idx) => {
+                  const extraCost = extra.price > 0 && extra.qty > 0
+                    ? (extra.priceFormat === 'each' ? extra.qty * extra.price : extra.qty / extra.price)
+                    : 0;
+                  return (
+                    <div key={extra.id} className="p-2.5 bg-gray-700/40 border border-gray-600/50 rounded-lg space-y-1.5 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-green-400">
+                          Tambahan #{idx + 1}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {extraCost > 0 && (
+                            <span className="text-[11px] text-yellow-400 font-medium">
+                              {fmtWL(extraCost)} WL
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSeed1Extra(extra.id)}
+                            className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                            title="Hapus field tambahan ini"
+                          >
+                            <FiTrash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400">Qty Beli Seed 1</label>
+                        <input
+                          type="number"
+                          value={extra.qty || ''}
+                          onChange={(e) => handleUpdateSeed1Extra(extra.id, 'qty', parseInt(e.target.value) || 0)}
+                          placeholder="Jumlah seed 1 dibeli"
+                          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400">Harga Beli Seed 1</label>
+                        <PriceInput
+                          price={extra.price}
+                          priceFormat={extra.priceFormat || 'perWL'}
+                          onPriceChange={(v) => handleUpdateSeed1Extra(extra.id, 'price', v)}
+                          onFormatChange={(v) => handleUpdateSeed1Extra(extra.id, 'priceFormat', v)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Tombol Tambah Pembelian Seed 1 */}
+                <button
+                  type="button"
+                  onClick={handleAddSeed1Extra}
+                  className="w-full py-1.5 px-2 bg-gray-700/50 hover:bg-gray-700 border border-dashed border-gray-600 hover:border-green-500/50 text-gray-300 hover:text-green-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+                  title="Tambah field qty dan harga beli untuk harga berbeda"
+                >
+                  <FiPlus className="w-3.5 h-3.5 text-green-400" />
+                  <span>+ Tambah Pembelian Seed 1</span>
+                </button>
               </div>
+
+              {/* Total Seed 1 Ringkasan */}
+              {(totalSeed1Qty > 0 || totalSeed1Cost > 0) && (
+                <div className="pt-2 border-t border-gray-700/60 flex items-center justify-between text-xs">
+                  <span className="text-gray-300">
+                    Total: <strong className="text-white">{formatNumber(totalSeed1Qty)} seeds</strong>
+                  </span>
+                  <span className="text-yellow-400 font-bold">
+                    Biaya: {fmtWL(totalSeed1Cost)} WL
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Plus sign */}
             <div className="flex items-start justify-center text-2xl text-green-400 font-bold pt-7">+</div>
 
             {/* Seed 2 */}
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 2</label>
-              <ItemSearch
-                value={step.seedName2}
-                onChange={(item) => handleItemSelect('seedName2', item)}
-                placeholder="Cari seed 2..."
-              />
-              <div className="mt-2 space-y-1.5">
-                <label className="block text-xs font-medium text-gray-400">Qty Beli Seed 2</label>
-                <input
-                  type="number"
-                  value={step.seed2Qty || ''}
-                  onChange={(e) => handleFieldChange('seed2Qty', parseInt(e.target.value) || 0)}
-                  placeholder="Jumlah seed 2 dibeli"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-                <label className="block text-xs font-medium text-gray-400">Harga Beli Seed 2</label>
-                <PriceInput
-                  price={step.seed2Price}
-                  priceFormat={step.seed2PriceFormat}
-                  onPriceChange={(v) => handleFieldChange('seed2Price', v)}
-                  onFormatChange={(v) => handleFieldChange('seed2PriceFormat', v)}
-                />
-                {seed2Cost > 0 && (
-                  <p className="text-xs text-yellow-400">
-                    Biaya: {fmtWL(seed2Cost)} WL
-                  </p>
-                )}
+            <div className="p-3 bg-gray-750/30 rounded-xl border border-gray-700/60 flex flex-col justify-between space-y-3">
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 2</label>
+                  <ItemSearch
+                    value={step.seedName2}
+                    onChange={(item) => handleItemSelect('seedName2', item)}
+                    placeholder="Cari seed 2..."
+                  />
+                </div>
+
+                {/* Pembelian Utama */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-medium text-gray-400">
+                      Qty Beli Seed 2 {seed2ExtraList.length > 0 && <span className="text-[11px] text-gray-500">(Utama)</span>}
+                    </label>
+                    {primarySeed2Cost > 0 && (
+                      <span className="text-[11px] text-yellow-400 font-medium">
+                        {fmtWL(primarySeed2Cost)} WL
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="number"
+                    value={step.seed2Qty || ''}
+                    onChange={(e) => handleFieldChange('seed2Qty', parseInt(e.target.value) || 0)}
+                    placeholder="Jumlah seed 2 dibeli"
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                  <label className="block text-xs font-medium text-gray-400">
+                    Harga Beli Seed 2 {seed2ExtraList.length > 0 && <span className="text-[11px] text-gray-500">(Utama)</span>}
+                  </label>
+                  <PriceInput
+                    price={step.seed2Price}
+                    priceFormat={step.seed2PriceFormat}
+                    onPriceChange={(v) => handleFieldChange('seed2Price', v)}
+                    onFormatChange={(v) => handleFieldChange('seed2PriceFormat', v)}
+                  />
+                </div>
+
+                {/* Batch Pembelian Tambahan Dinamis */}
+                {seed2ExtraList.map((extra, idx) => {
+                  const extraCost = extra.price > 0 && extra.qty > 0
+                    ? (extra.priceFormat === 'each' ? extra.qty * extra.price : extra.qty / extra.price)
+                    : 0;
+                  return (
+                    <div key={extra.id} className="p-2.5 bg-gray-700/40 border border-gray-600/50 rounded-lg space-y-1.5 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-green-400">
+                          Tambahan #{idx + 1}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {extraCost > 0 && (
+                            <span className="text-[11px] text-yellow-400 font-medium">
+                              {fmtWL(extraCost)} WL
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSeed2Extra(extra.id)}
+                            className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                            title="Hapus field tambahan ini"
+                          >
+                            <FiTrash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400">Qty Beli Seed 2</label>
+                        <input
+                          type="number"
+                          value={extra.qty || ''}
+                          onChange={(e) => handleUpdateSeed2Extra(extra.id, 'qty', parseInt(e.target.value) || 0)}
+                          placeholder="Jumlah seed 2 dibeli"
+                          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400">Harga Beli Seed 2</label>
+                        <PriceInput
+                          price={extra.price}
+                          priceFormat={extra.priceFormat || 'perWL'}
+                          onPriceChange={(v) => handleUpdateSeed2Extra(extra.id, 'price', v)}
+                          onFormatChange={(v) => handleUpdateSeed2Extra(extra.id, 'priceFormat', v)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Tombol Tambah Pembelian Seed 2 */}
+                <button
+                  type="button"
+                  onClick={handleAddSeed2Extra}
+                  className="w-full py-1.5 px-2 bg-gray-700/50 hover:bg-gray-700 border border-dashed border-gray-600 hover:border-green-500/50 text-gray-300 hover:text-green-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+                  title="Tambah field qty dan harga beli untuk harga berbeda"
+                >
+                  <FiPlus className="w-3.5 h-3.5 text-green-400" />
+                  <span>+ Tambah Pembelian Seed 2</span>
+                </button>
               </div>
+
+              {/* Total Seed 2 Ringkasan */}
+              {(totalSeed2Qty > 0 || totalSeed2Cost > 0) && (
+                <div className="pt-2 border-t border-gray-700/60 flex items-center justify-between text-xs">
+                  <span className="text-gray-300">
+                    Total: <strong className="text-white">{formatNumber(totalSeed2Qty)} seeds</strong>
+                  </span>
+                  <span className="text-yellow-400 font-bold">
+                    Biaya: {fmtWL(totalSeed2Cost)} WL
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -245,14 +511,14 @@ export default function RecipeStep({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium text-gray-400">Total Seeds Ditanam</label>
-                {step.seed1Qty > 0 && step.seed2Qty > 0 && !step.seedsPlanted && (
+                {totalSeed1Qty > 0 && totalSeed2Qty > 0 && !step.seedsPlanted && (
                   <button
                     type="button"
-                    onClick={() => handleFieldChange('seedsPlanted', Math.min(step.seed1Qty, step.seed2Qty))}
+                    onClick={() => handleFieldChange('seedsPlanted', Math.min(totalSeed1Qty, totalSeed2Qty))}
                     className="text-[10px] text-green-400 hover:underline"
-                    title="Isi dengan min(Seed 1, Seed 2)"
+                    title="Isi dengan min(Total Seed 1, Total Seed 2)"
                   >
-                    Max: {formatNumber(Math.min(step.seed1Qty, step.seed2Qty))}
+                    Max: {formatNumber(Math.min(totalSeed1Qty, totalSeed2Qty))}
                   </button>
                 )}
               </div>
@@ -260,7 +526,7 @@ export default function RecipeStep({
                 type="number"
                 value={step.seedsPlanted || ''}
                 onChange={(e) => handleFieldChange('seedsPlanted', parseInt(e.target.value) || 0)}
-                placeholder={step.seed1Qty > 0 && step.seed2Qty > 0 ? `${Math.min(step.seed1Qty, step.seed2Qty)}` : '0'}
+                placeholder={totalSeed1Qty > 0 && totalSeed2Qty > 0 ? `${Math.min(totalSeed1Qty, totalSeed2Qty)}` : '0'}
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
               <p className="text-xs text-gray-500 mt-0.5">Jumlah pohon yang ditanam</p>

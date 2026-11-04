@@ -43,11 +43,13 @@ export function createDefaultStep(overrides = {}) {
     seed1Qty: 0,
     seed1Price: 0,
     seed1PriceFormat: 'perWL',
+    seed1ExtraPurchases: [],
 
     // Seed 2
     seed2Qty: 0,
     seed2Price: 0,
     seed2PriceFormat: 'perWL',
+    seed2ExtraPurchases: [],
 
     // Fuel
     fuelNeeded: 0,

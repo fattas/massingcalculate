@@ -65,9 +65,11 @@ export function calculateStep(step) {
     seed1Qty = 0,
     seed1Price = 0,
     seed1PriceFormat = 'perWL',
+    seed1ExtraPurchases = [],
     seed2Qty = 0,
     seed2Price = 0,
     seed2PriceFormat = 'perWL',
+    seed2ExtraPurchases = [],
     fuelNeeded = 0,
     fuelPrice = 0,
     fuelPriceFormat = 'perWL',
@@ -79,8 +81,32 @@ export function calculateStep(step) {
   const totalTrees = seedsPlanted;
   const seedsAfterHarvest = calculateSeedsAfterLoss(totalTrees, seedLossPercent);
 
-  const seed1CostWL = calculateCost(seed1Qty || seedsPlanted, seed1Price, seed1PriceFormat);
-  const seed2CostWL = calculateCost(seed2Qty || seedsPlanted, seed2Price, seed2PriceFormat);
+  // Seed 1: Primary + Extra Purchases
+  const extraSeed1Purchases = Array.isArray(seed1ExtraPurchases) ? seed1ExtraPurchases : [];
+  const primarySeed1Cost = calculateCost(
+    seed1Qty || (extraSeed1Purchases.length === 0 ? seedsPlanted : 0),
+    seed1Price,
+    seed1PriceFormat
+  );
+  const extraSeed1Cost = extraSeed1Purchases.reduce((sum, p) => {
+    return sum + calculateCost(p.qty, p.price, p.priceFormat || 'perWL');
+  }, 0);
+  const seed1CostWL = primarySeed1Cost + extraSeed1Cost;
+  const totalSeed1Qty = (parseInt(seed1Qty) || 0) + extraSeed1Purchases.reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
+
+  // Seed 2: Primary + Extra Purchases
+  const extraSeed2Purchases = Array.isArray(seed2ExtraPurchases) ? seed2ExtraPurchases : [];
+  const primarySeed2Cost = calculateCost(
+    seed2Qty || (extraSeed2Purchases.length === 0 ? seedsPlanted : 0),
+    seed2Price,
+    seed2PriceFormat
+  );
+  const extraSeed2Cost = extraSeed2Purchases.reduce((sum, p) => {
+    return sum + calculateCost(p.qty, p.price, p.priceFormat || 'perWL');
+  }, 0);
+  const seed2CostWL = primarySeed2Cost + extraSeed2Cost;
+  const totalSeed2Qty = (parseInt(seed2Qty) || 0) + extraSeed2Purchases.reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
+
   const actualFuelPrice = fuelPrice > 0 ? fuelPrice : fuelCostPerUnit;
   const actualFuelFormat = fuelPrice > 0 ? fuelPriceFormat : (fuelCostPerUnit > 0 ? 'each' : fuelPriceFormat);
   const fuelCostWL = calculateCost(fuelNeeded, actualFuelPrice, actualFuelFormat);
@@ -92,6 +118,8 @@ export function calculateStep(step) {
     seedsAfterHarvest,
     seed1CostWL,
     seed2CostWL,
+    totalSeed1Qty,
+    totalSeed2Qty,
     fuelCostWL,
     tmGemsCostWL: actualTmGemsCostWL,
     tmGemsAmount: useTM ? (parseInt(tmGemsAmount) || 0) : 0,
