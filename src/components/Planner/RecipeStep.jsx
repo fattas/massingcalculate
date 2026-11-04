@@ -1,0 +1,426 @@
+import { useState } from 'react';
+import ItemSearch from '../Common/ItemSearch';
+import ItemIcon from '../Common/ItemIcon';
+import { calculateStep, formatNumber, fmtWL } from '../../utils/calculations';
+import { FiTrash2, FiChevronDown, FiChevronUp, FiCpu } from 'react-icons/fi';
+
+function PriceInput({ price, priceFormat, onPriceChange, onFormatChange }) {
+  return (
+    <div className="flex gap-2 mt-1.5">
+      <div className="flex-1">
+        <input
+          type="number"
+          value={price || ''}
+          onChange={(e) => onPriceChange(parseFloat(e.target.value) || 0)}
+          placeholder={priceFormat === 'perWL' ? 'Contoh: 200' : 'Contoh: 3'}
+          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+      </div>
+      <select
+        value={priceFormat}
+        onChange={(e) => onFormatChange(e.target.value)}
+        className="px-2 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500 min-w-[110px]"
+      >
+        <option value="perWL">qty / WL</option>
+        <option value="each">WL each</option>
+      </select>
+    </div>
+  );
+}
+
+export default function RecipeStep({
+  step,
+  index,
+  onUpdate,
+  onRemove,
+  isOnly,
+  prevStepSeeds = 0,
+  onApplyPrevStep,
+}) {
+  const [expanded, setExpanded] = useState(true);
+
+  const results = calculateStep(step);
+
+  const handleFieldChange = (field, value) => {
+    onUpdate({ ...step, [field]: value });
+  };
+
+  const handleItemSelect = (field, item) => {
+    if (item) {
+      const updates = { [field]: item.name };
+      if (field === 'resultItemName' && item.hitsToBreak) {
+        updates.hitsPerBlock = item.hitsToBreak;
+      }
+      onUpdate({ ...step, ...updates });
+    } else {
+      onUpdate({ ...step, [field]: '' });
+    }
+  };
+
+  // Calculate biaya preview for each seed
+  const seed1Qty = step.seed1Qty || step.seedsPlanted || 0;
+  const seed2Qty = step.seed2Qty || step.seedsPlanted || 0;
+  const seed1Cost = step.seed1Price > 0 && seed1Qty > 0
+    ? (step.seed1PriceFormat === 'each' ? seed1Qty * step.seed1Price : seed1Qty / step.seed1Price)
+    : 0;
+  const seed2Cost = step.seed2Price > 0 && seed2Qty > 0
+    ? (step.seed2PriceFormat === 'each' ? seed2Qty * step.seed2Price : seed2Qty / step.seed2Price)
+    : 0;
+  const fuelQty = step.fuelNeeded || 0;
+  const fuelPrice = step.fuelPrice ?? step.fuelCostPerUnit ?? 0;
+  const fuelPriceFormat = step.fuelPriceFormat || (step.fuelCostPerUnit > 0 ? 'each' : 'perWL');
+  const fuelCost = fuelPrice > 0 && fuelQty > 0
+    ? (fuelPriceFormat === 'each' ? fuelQty * fuelPrice : fuelQty / fuelPrice)
+    : 0;
+
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden animate-fade-in">
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-4 py-3 bg-gray-800 hover:bg-gray-750 cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-green-500/20 text-green-400 rounded-lg flex items-center justify-center font-bold text-sm">
+            {index + 1}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">
+              {step.name || `Step ${index + 1}`}
+            </h3>
+            <p className="text-xs text-gray-400">
+              {step.resultItemName || 'Belum ditentukan'}
+              {step.useTM && ` • ${step.tmCount} TM`}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!isOnly && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+              title="Hapus step"
+            >
+              <FiTrash2 className="w-4 h-4" />
+            </button>
+          )}
+          {expanded ? <FiChevronUp className="w-4 h-4 text-gray-400" /> : <FiChevronDown className="w-4 h-4 text-gray-400" />}
+        </div>
+      </div>
+
+      {/* Content */}
+      {expanded && (
+        <div className="p-4 border-t border-gray-700 space-y-4">
+          {/* Step Name */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">Nama Step</label>
+            <input
+              type="text"
+              value={step.name}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
+              placeholder="Contoh: Farm Chicken Seeds"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+
+          {/* Sambungkan dari Step sebelumnya jika ada */}
+          {prevStepSeeds > 0 && onApplyPrevStep && (
+            <div className="flex items-center justify-between p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-lg text-xs">
+              <span className="text-blue-300">
+                📦 Hasil Step {index}: <strong className="text-white">{formatNumber(prevStepSeeds)} seeds</strong> (after break)
+              </span>
+              <button
+                type="button"
+                onClick={() => onApplyPrevStep(prevStepSeeds)}
+                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+                title="Gunakan sebagai Seed 1 dan Total Ditanam di Step ini"
+              >
+                Gunakan di Step Ini ➔
+              </button>
+            </div>
+          )}
+
+          {/* Splicing Recipe - Seed 1 + Seed 2 with individual prices & qty */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3">
+            {/* Seed 1 */}
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 1</label>
+              <ItemSearch
+                value={step.seedName1}
+                onChange={(item) => handleItemSelect('seedName1', item)}
+                placeholder="Cari seed 1..."
+              />
+              <div className="mt-2 space-y-1.5">
+                <label className="block text-xs font-medium text-gray-400">Qty Beli Seed 1</label>
+                <input
+                  type="number"
+                  value={step.seed1Qty || ''}
+                  onChange={(e) => handleFieldChange('seed1Qty', parseInt(e.target.value) || 0)}
+                  placeholder="Jumlah seed 1 dibeli"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <label className="block text-xs font-medium text-gray-400">Harga Beli Seed 1</label>
+                <PriceInput
+                  price={step.seed1Price}
+                  priceFormat={step.seed1PriceFormat}
+                  onPriceChange={(v) => handleFieldChange('seed1Price', v)}
+                  onFormatChange={(v) => handleFieldChange('seed1PriceFormat', v)}
+                />
+                {seed1Cost > 0 && (
+                  <p className="text-xs text-yellow-400">
+                    Biaya: {fmtWL(seed1Cost)} WL
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Plus sign */}
+            <div className="flex items-start justify-center text-2xl text-green-400 font-bold pt-7">+</div>
+
+            {/* Seed 2 */}
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 2</label>
+              <ItemSearch
+                value={step.seedName2}
+                onChange={(item) => handleItemSelect('seedName2', item)}
+                placeholder="Cari seed 2..."
+              />
+              <div className="mt-2 space-y-1.5">
+                <label className="block text-xs font-medium text-gray-400">Qty Beli Seed 2</label>
+                <input
+                  type="number"
+                  value={step.seed2Qty || ''}
+                  onChange={(e) => handleFieldChange('seed2Qty', parseInt(e.target.value) || 0)}
+                  placeholder="Jumlah seed 2 dibeli"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <label className="block text-xs font-medium text-gray-400">Harga Beli Seed 2</label>
+                <PriceInput
+                  price={step.seed2Price}
+                  priceFormat={step.seed2PriceFormat}
+                  onPriceChange={(v) => handleFieldChange('seed2Price', v)}
+                  onFormatChange={(v) => handleFieldChange('seed2PriceFormat', v)}
+                />
+                {seed2Cost > 0 && (
+                  <p className="text-xs text-yellow-400">
+                    Biaya: {fmtWL(seed2Cost)} WL
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Result Item & Indikator Hasil Splicing */}
+          <div className="p-3 bg-gray-700/50 rounded-lg border border-gray-600/50 space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="text-xl">➡️</div>
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-400 mb-1">Hasil Splicing</label>
+                <ItemSearch
+                  value={step.resultItemName}
+                  onChange={(item) => handleItemSelect('resultItemName', item)}
+                  placeholder="Cari hasil item..."
+                />
+              </div>
+              {step.resultItemName && (
+                <ItemIcon name={step.resultItemName} size={40} />
+              )}
+            </div>
+
+            {/* Indikator Hasil Splicing (After Break) */}
+            {results.seedsAfterHarvest > 0 && (
+              <div className="flex items-center justify-between pt-2 border-t border-gray-600/40 text-xs">
+                <span className="text-gray-300 flex items-center gap-1.5 font-medium">
+                  🌱 Estimasi Seed Didapat (After Break):
+                </span>
+                <span className="text-green-400 font-bold text-sm bg-green-500/10 px-2.5 py-0.5 rounded border border-green-500/20">
+                  {formatNumber(results.seedsAfterHarvest)} <span className="text-xs font-normal text-gray-400">seeds</span>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Parameters Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-gray-400">Total Seeds Ditanam</label>
+                {step.seed1Qty > 0 && step.seed2Qty > 0 && !step.seedsPlanted && (
+                  <button
+                    type="button"
+                    onClick={() => handleFieldChange('seedsPlanted', Math.min(step.seed1Qty, step.seed2Qty))}
+                    className="text-[10px] text-green-400 hover:underline"
+                    title="Isi dengan min(Seed 1, Seed 2)"
+                  >
+                    Max: {formatNumber(Math.min(step.seed1Qty, step.seed2Qty))}
+                  </button>
+                )}
+              </div>
+              <input
+                type="number"
+                value={step.seedsPlanted || ''}
+                onChange={(e) => handleFieldChange('seedsPlanted', parseInt(e.target.value) || 0)}
+                placeholder={step.seed1Qty > 0 && step.seed2Qty > 0 ? `${Math.min(step.seed1Qty, step.seed2Qty)}` : '0'}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <p className="text-xs text-gray-500 mt-0.5">Jumlah pohon yang ditanam</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Seed Loss (%)</label>
+              <input
+                type="number"
+                value={step.seedLossPercent || ''}
+                onChange={(e) => handleFieldChange('seedLossPercent', parseFloat(e.target.value) || 0)}
+                placeholder="21"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Hits per Block</label>
+              <input
+                type="number"
+                value={step.hitsPerBlock || ''}
+                onChange={(e) => handleFieldChange('hitsPerBlock', parseInt(e.target.value) || 1)}
+                placeholder="4"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+          </div>
+
+          {/* Fuel Pack */}
+          <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-300">Fuel Pack</span>
+              {fuelCost > 0 && (
+                <span className="text-xs text-yellow-400 font-medium">
+                  Biaya Fuel: {fmtWL(fuelCost)} WL
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">Qty Beli Fuel Pack</label>
+                <input
+                  type="number"
+                  value={step.fuelNeeded || ''}
+                  onChange={(e) => handleFieldChange('fuelNeeded', parseInt(e.target.value) || 0)}
+                  placeholder="Jumlah fuel pack dibeli"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">Harga Beli Fuel Pack</label>
+                <PriceInput
+                  price={step.fuelPrice ?? step.fuelCostPerUnit ?? ''}
+                  priceFormat={step.fuelPriceFormat || 'perWL'}
+                  onPriceChange={(v) => {
+                    handleFieldChange('fuelPrice', v);
+                    handleFieldChange('fuelCostPerUnit', v);
+                  }}
+                  onFormatChange={(v) => handleFieldChange('fuelPriceFormat', v)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* TM Configuration */}
+          <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/30">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FiCpu className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-medium text-white">Tesseract Manipulator</span>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={step.useTM}
+                  onChange={(e) => handleFieldChange('useTM', e.target.checked)}
+                  className="w-4 h-4 text-green-500 bg-gray-700 border-gray-600 rounded focus:ring-green-500"
+                />
+                <span className="text-sm text-gray-300">Gunakan TM</span>
+              </label>
+            </div>
+
+            {step.useTM && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1">Jumlah TM</label>
+                  <input
+                    type="number"
+                    value={step.tmCount || ''}
+                    onChange={(e) => handleFieldChange('tmCount', Math.max(1, parseInt(e.target.value) || 1))}
+                    min="1"
+                    placeholder="8"
+                    className="w-32 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Modal Beli Gems untuk Bahan Bakar TM */}
+                <div className="pt-3 border-t border-gray-600/30">
+                  <p className="text-xs font-semibold text-gray-300 mb-2">
+                    Modal Beli Gems (Bahan Bakar TM)
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1">Gems</label>
+                      <input
+                        type="number"
+                        value={step.tmGemsAmount || ''}
+                        onChange={(e) => handleFieldChange('tmGemsAmount', parseInt(e.target.value) || 0)}
+                        placeholder="Contoh: 50000"
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-[11px] text-gray-500 mt-0.5">Jumlah gems yang dibeli</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1">WL</label>
+                      <input
+                        type="number"
+                        value={step.tmGemsCostWL || ''}
+                        onChange={(e) => handleFieldChange('tmGemsCostWL', parseFloat(e.target.value) || 0)}
+                        placeholder="Contoh: 25"
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-[11px] text-gray-500 mt-0.5">Modal gems (masuk hitungan keuangan)</p>
+                    </div>
+                  </div>
+                  {step.tmGemsCostWL > 0 && (
+                    <p className="text-xs text-yellow-400 mt-1.5">
+                      Modal Gems TM: {fmtWL(step.tmGemsCostWL)} WL
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Step Results Summary */}
+          {step.seedsPlanted > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 bg-gray-700/30 rounded-lg text-center">
+                <p className="text-xs text-gray-400">Seeds Sisa (After Break)</p>
+                <p className="text-lg font-bold text-green-400">{formatNumber(results.seedsAfterHarvest)}</p>
+              </div>
+              <div className="p-3 bg-gray-700/30 rounded-lg text-center">
+                <p className="text-xs text-gray-400">Biaya Step</p>
+                <p className="text-lg font-bold text-red-400">{fmtWL(results.totalCostWL)} WL</p>
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">Catatan</label>
+            <input
+              type="text"
+              value={step.notes}
+              onChange={(e) => handleFieldChange('notes', e.target.value)}
+              placeholder="Catatan opsional..."
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
