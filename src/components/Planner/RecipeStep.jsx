@@ -67,7 +67,7 @@ export default function RecipeStep({
     ? (step.seed2PriceFormat === 'each' ? seed2Qty * step.seed2Price : seed2Qty / step.seed2Price)
     : 0;
   const fuelQty = step.fuelNeeded || 0;
-  const fuelPrice = step.fuelPrice ?? step.fuelCostPerUnit ?? 0;
+  const fuelPrice = step.fuelPrice || step.fuelCostPerUnit || 0;
   const fuelPriceFormat = step.fuelPriceFormat || (step.fuelCostPerUnit > 0 ? 'each' : 'perWL');
   const fuelCost = fuelPrice > 0 && fuelQty > 0
     ? (fuelPriceFormat === 'each' ? fuelQty * fuelPrice : fuelQty / fuelPrice)
@@ -311,11 +311,14 @@ export default function RecipeStep({
               <div>
                 <label className="block text-xs font-medium text-gray-400 mb-1">Harga Beli Fuel Pack</label>
                 <PriceInput
-                  price={step.fuelPrice ?? step.fuelCostPerUnit ?? ''}
+                  price={step.fuelPrice || step.fuelCostPerUnit || ''}
                   priceFormat={step.fuelPriceFormat || 'perWL'}
                   onPriceChange={(v) => {
-                    handleFieldChange('fuelPrice', v);
-                    handleFieldChange('fuelCostPerUnit', v);
+                    onUpdate({
+                      ...step,
+                      fuelPrice: v,
+                      fuelCostPerUnit: v,
+                    });
                   }}
                   onFormatChange={(v) => handleFieldChange('fuelPriceFormat', v)}
                 />
