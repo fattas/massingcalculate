@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import MassingPlanner from './components/Planner/MassingPlanner';
 import InventoryManager from './components/Inventory/InventoryManager';
-import { FiClipboard, FiPackage, FiGitBranch } from 'react-icons/fi';
+import SeedShoppingTracker from './components/Tracker/SeedShoppingTracker';
+import { FiClipboard, FiPackage, FiGitBranch, FiShoppingCart } from 'react-icons/fi';
 
 const TABS = [
   { id: 'planner', label: 'Massing Planner', icon: FiClipboard },
+  { id: 'shopping', label: 'Tracker Belanja', icon: FiShoppingCart },
   { id: 'inventory', label: 'Inventory', icon: FiPackage },
 ];
 
@@ -68,6 +70,7 @@ export default function App() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         {activeTab === 'planner' && <MassingPlanner />}
+        {activeTab === 'shopping' && <SeedShoppingTracker />}
         {activeTab === 'inventory' && <InventoryManager />}
       </main>
 
