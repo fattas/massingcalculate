@@ -6,7 +6,7 @@ import { createDefaultStep, createDefaultPlan } from '../../data/growtopiaItems'
 import { useLocalStorage, useSavedPlans } from '../../hooks/useLocalStorage';
 import { extractPlanFromURL } from '../../utils/sharing';
 import { fmtWL, calculateStep, formatNumber, calculateBEP, formatBEP } from '../../utils/calculations';
-import { FiPlus, FiSave, FiFolder, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiSave, FiFolder, FiTrash2, FiCopy } from 'react-icons/fi';
 
 export default function MassingPlanner() {
   const [plan, setPlan] = useLocalStorage('gt-current-plan', createDefaultPlan());
@@ -61,6 +61,68 @@ export default function MassingPlanner() {
     setPlan(createDefaultPlan());
   };
 
+  const duplicatePlan = (targetPlan) => {
+    const clonedSteps = (targetPlan.steps || []).map((step, idx) => ({
+      ...step,
+      id: Date.now().toString() + '_' + idx + '_' + Math.random().toString(36).substring(2, 7),
+      seed1ExtraPurchases: (step.seed1ExtraPurchases || []).map((p, pIdx) => ({
+        ...p,
+        id: Date.now().toString() + '_p1_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
+      })),
+      seed2ExtraPurchases: (step.seed2ExtraPurchases || []).map((p, pIdx) => ({
+        ...p,
+        id: Date.now().toString() + '_p2_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
+      })),
+    }));
+
+    const newPlan = {
+      ...targetPlan,
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
+      name: `${targetPlan.name || 'Untitled Plan'} (Copy)`,
+      steps: clonedSteps,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return newPlan;
+  };
+
+  const handleDuplicateCurrentPlan = () => {
+    const duplicated = duplicatePlan(plan);
+    setPlan(duplicated);
+    savePlan(duplicated);
+    setSaveNotice('Plan Diduplikat!');
+    setTimeout(() => setSaveNotice(''), 2500);
+  };
+
+  const handleDuplicateSavedPlan = (sp, e) => {
+    e.stopPropagation();
+    const duplicated = duplicatePlan(sp);
+    savePlan(duplicated);
+    setSaveNotice('Salinan Tersimpan!');
+    setTimeout(() => setSaveNotice(''), 2500);
+  };
+
+  const duplicateStep = (index) => {
+    const stepToClone = plan.steps[index];
+    const clonedStep = {
+      ...stepToClone,
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
+      name: stepToClone.name ? `${stepToClone.name} (Copy)` : '',
+      seed1ExtraPurchases: (stepToClone.seed1ExtraPurchases || []).map((p, pIdx) => ({
+        ...p,
+        id: Date.now().toString() + '_p1_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
+      })),
+      seed2ExtraPurchases: (stepToClone.seed2ExtraPurchases || []).map((p, pIdx) => ({
+        ...p,
+        id: Date.now().toString() + '_p2_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
+      })),
+    };
+    const newSteps = [...plan.steps];
+    newSteps.splice(index + 1, 0, clonedStep);
+    updatePlan({ steps: newSteps });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Plan Header */}
@@ -98,6 +160,13 @@ export default function MassingPlanner() {
               {saveNotice || 'Simpan'}
             </button>
             <button
+              onClick={handleDuplicateCurrentPlan}
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-amber-300 rounded-lg text-sm transition-colors"
+              title="Duplikat plan saat ini (buat salinan baru)"
+            >
+              <FiCopy className="w-4 h-4 text-amber-400" /> Duplikat
+            </button>
+            <button
               onClick={() => setShowSavedPlans(!showSavedPlans)}
               className="flex items-center gap-1.5 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm transition-colors"
             >
@@ -110,24 +179,47 @@ export default function MassingPlanner() {
         {/* Saved Plans Drawer */}
         {showSavedPlans && savedPlans.length > 0 && (
           <div className="border-t border-gray-700 pt-3 space-y-2 animate-fade-in">
-            <h3 className="text-sm font-semibold text-gray-400">Plans Tersimpan:</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-400">Plans Tersimpan:</h3>
+              {saveNotice && (
+                <span className="text-xs text-green-400 font-medium animate-fade-in">
+                  ✓ {saveNotice}
+                </span>
+              )}
+            </div>
             {savedPlans.map((sp) => (
-              <div key={sp.id} className="flex items-center justify-between p-2 bg-gray-700/50 rounded-lg">
+              <div key={sp.id} className="flex items-center justify-between p-2.5 bg-gray-700/50 hover:bg-gray-700/80 rounded-lg transition-colors">
                 <button
                   onClick={() => handleLoadPlan(sp)}
-                  className="text-left flex-1 hover:text-green-400 transition-colors"
+                  className="text-left flex-1 hover:text-green-400 transition-colors mr-3"
+                  title="Klik untuk membuka plan ini"
                 >
                   <p className="text-sm text-white font-medium">{sp.name}</p>
                   <p className="text-xs text-gray-400">
                     {sp.steps?.length || 0} steps • Disimpan: {new Date(sp.savedAt).toLocaleDateString('id-ID')}
                   </p>
                 </button>
-                <button
-                  onClick={() => deletePlan(sp.id)}
-                  className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
-                >
-                  <FiTrash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => handleDuplicateSavedPlan(sp, e)}
+                    className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded transition-colors"
+                    title="Duplikat plan ini (buat salinan)"
+                  >
+                    <FiCopy className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Hapus plan "${sp.name}"?`)) {
+                        deletePlan(sp.id);
+                      }
+                    }}
+                    className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                    title="Hapus plan"
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -165,6 +257,7 @@ export default function MassingPlanner() {
                 }}
                 onUpdate={(updated) => updateStep(index, updated)}
                 onRemove={() => removeStep(index)}
+                onDuplicate={() => duplicateStep(index)}
                 isOnly={plan.steps.length === 1}
               />
             );

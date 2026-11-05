@@ -2,7 +2,7 @@ import { useState } from 'react';
 import ItemSearch from '../Common/ItemSearch';
 import ItemIcon from '../Common/ItemIcon';
 import { calculateStep, formatNumber, fmtWL } from '../../utils/calculations';
-import { FiTrash2, FiChevronDown, FiChevronUp, FiCpu, FiPlus, FiClock } from 'react-icons/fi';
+import { FiTrash2, FiChevronDown, FiChevronUp, FiCpu, FiPlus, FiClock, FiCopy } from 'react-icons/fi';
 
 function PriceInput({ price, priceFormat, onPriceChange, onFormatChange }) {
   return (
@@ -33,6 +33,7 @@ export default function RecipeStep({
   index,
   onUpdate,
   onRemove,
+  onDuplicate,
   isOnly,
   prevStepSeeds = 0,
   onApplyPrevStep,
@@ -190,7 +191,16 @@ export default function RecipeStep({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {onDuplicate && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+              className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-gray-750 rounded-lg transition-colors"
+              title="Duplikat step ini"
+            >
+              <FiCopy className="w-4 h-4" />
+            </button>
+          )}
           {!isOnly && (
             <button
               onClick={(e) => { e.stopPropagation(); onRemove(); }}
