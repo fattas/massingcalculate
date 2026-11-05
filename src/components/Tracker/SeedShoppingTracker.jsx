@@ -1,13 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TrackerCard from './TrackerCard';
 import ItemSearch from '../Common/ItemSearch';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useLocalStorage, useSavedPlans } from '../../hooks/useLocalStorage';
+import { createDefaultPlan } from '../../data/growtopiaItems';
 import { formatNumber, fmtWL, formatRupiah, calculateCost } from '../../utils/calculations';
-import { FiShoppingCart, FiPlus, FiDownload, FiTrash2, FiCheck, FiX, FiLayers } from 'react-icons/fi';
+import { FiShoppingCart, FiPlus, FiDownload, FiTrash2, FiCheck, FiX, FiFolder } from 'react-icons/fi';
 
 export default function SeedShoppingTracker() {
-  const [trackers, setTrackers] = useLocalStorage('gt-shopping-trackers', []);
-  const [currentPlan, setCurrentPlan] = useLocalStorage('gt-current-plan', null);
+  const [currentPlan, setCurrentPlan] = useLocalStorage('gt-current-plan', createDefaultPlan());
+  const { plans: savedPlans, savePlan } = useSavedPlans();
+
+  // Combine saved plans + current plan into selectable list
+  const allPlansMap = new Map();
+  if (currentPlan && currentPlan.id) {
+    allPlansMap.set(currentPlan.id, currentPlan);
+  }
+  savedPlans.forEach((p) => {
+    allPlansMap.set(p.id, p);
+  });
+  const allPlanOptions = Array.from(allPlansMap.values());
+
+  // Current active plan's shopping trackers
+  const trackers = currentPlan?.shoppingTrackers || [];
+
+  // Update trackers specifically for the current active plan
+  const updateTrackers = (newTrackers) => {
+    const updatedPlan = {
+      ...currentPlan,
+      shoppingTrackers: newTrackers,
+      updatedAt: new Date().toISOString(),
+    };
+    setCurrentPlan(updatedPlan);
+    if (savedPlans.some((p) => p.id === currentPlan.id)) {
+      savePlan(updatedPlan);
+    }
+  };
+
+  // Switch active plan
+  const handleSwitchPlan = (planId) => {
+    const target = allPlanOptions.find((p) => p.id === planId);
+    if (target) {
+      setCurrentPlan(target);
+      showNotification(`Beralih ke plan "${target.name || 'Untitled Plan'}"`);
+    }
+  };
+
+  // One-time legacy migration from global 'gt-shopping-trackers' if present
+  useEffect(() => {
+    try {
+      const legacy = window.localStorage.getItem('gt-shopping-trackers');
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        if (Array.isArray(parsed) && parsed.length > 0 && (!currentPlan.shoppingTrackers || currentPlan.shoppingTrackers.length === 0)) {
+          updateTrackers(parsed);
+          window.localStorage.removeItem('gt-shopping-trackers');
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // New tracker form modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -39,38 +91,40 @@ export default function SeedShoppingTracker() {
       createdAt: new Date().toISOString(),
     };
 
-    setTrackers((prev) => [...prev, newTracker]);
+    updateTrackers([...trackers, newTracker]);
     setNewItemName('');
     setNewTargetQty('');
     setNewDefaultPrice('');
     setShowAddModal(false);
-    showNotification(`Target "${newTracker.name}" berhasil dibuat!`);
+    showNotification(`Target "${newTracker.name}" berhasil dibuat untuk ${currentPlan.name || 'plan ini'}!`);
   };
 
   // Update a tracker card
   const handleUpdateTracker = (updated) => {
-    setTrackers((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    const updatedList = trackers.map((t) => (t.id === updated.id ? updated : t));
+    updateTrackers(updatedList);
   };
 
   // Delete a tracker card
   const handleDeleteTracker = (trackerId) => {
     const target = trackers.find((t) => t.id === trackerId);
-    if (window.confirm(`Hapus tracker untuk "${target?.name || 'item ini'}"?`)) {
-      setTrackers((prev) => prev.filter((t) => t.id !== trackerId));
+    if (window.confirm(`Hapus tracker untuk "${target?.name || 'item ini'}" dari plan ini?`)) {
+      const updatedList = trackers.filter((t) => t.id !== trackerId);
+      updateTrackers(updatedList);
     }
   };
 
-  // Clear all trackers
+  // Clear all trackers in this plan
   const handleClearAll = () => {
-    if (window.confirm('Yakin ingin menghapus semua catatan tracker belanja?')) {
-      setTrackers([]);
+    if (window.confirm(`Yakin ingin menghapus semua catatan tracker belanja pada plan "${currentPlan.name || 'ini'}"?`)) {
+      updateTrackers([]);
     }
   };
 
-  // Import items from active Massing Planner plan
+  // Import items from current active plan
   const handleImportFromPlanner = () => {
     if (!currentPlan || !currentPlan.steps || currentPlan.steps.length === 0) {
-      alert('Tidak ada plan massing yang aktif di Massing Planner.');
+      alert('Plan ini belum memiliki step massing.');
       return;
     }
 
@@ -105,12 +159,12 @@ export default function SeedShoppingTracker() {
     });
 
     if (created.length === 0) {
-      alert('Plan aktif di Massing Planner belum memiliki nama Seed 1 atau Seed 2. Tentukan nama seed terlebih dahulu di Massing Planner.');
+      alert(`Plan "${currentPlan.name}" belum memiliki nama Seed 1 atau Seed 2. Tentukan nama seed terlebih dahulu di Massing Planner.`);
       return;
     }
 
-    setTrackers((prev) => [...prev, ...created]);
-    showNotification(`Berhasil mengambil ${created.length} bahan dari Massing Planner!`);
+    updateTrackers([...trackers, ...created]);
+    showNotification(`Berhasil mengambil ${created.length} bahan dari plan "${currentPlan.name}"!`);
   };
 
   // Apply tracked purchases to Massing Planner
@@ -119,13 +173,12 @@ export default function SeedShoppingTracker() {
 
     const newSteps = [...(currentPlan.steps || [])];
     if (!newSteps[stepIndex]) {
-      alert(`Step ${stepIndex + 1} tidak ditemukan di Massing Planner.`);
+      alert(`Step ${stepIndex + 1} tidak ditemukan di plan ini.`);
       return;
     }
 
     const step = { ...newSteps[stepIndex] };
 
-    // Format purchases into primary batch + extra purchases
     if (purchases.length === 0) {
       alert('Belum ada pembelian yang dicatat pada tracker ini.');
       return;
@@ -154,16 +207,21 @@ export default function SeedShoppingTracker() {
     }
 
     newSteps[stepIndex] = step;
-    setCurrentPlan({
+    const updatedPlan = {
       ...currentPlan,
       steps: newSteps,
       updatedAt: new Date().toISOString(),
-    });
+    };
 
-    showNotification(`Berhasil disalin ke Step ${stepIndex + 1} (${seedSlot === 'seed1' ? 'Seed 1' : 'Seed 2'})!`);
+    setCurrentPlan(updatedPlan);
+    if (savedPlans.some((p) => p.id === currentPlan.id)) {
+      savePlan(updatedPlan);
+    }
+
+    showNotification(`Berhasil disalin ke Step ${stepIndex + 1} (${seedSlot === 'seed1' ? 'Seed 1' : 'Seed 2'}) di plan "${currentPlan.name}"!`);
   };
 
-  // Grand totals across all trackers
+  // Grand totals across all trackers in this plan
   let totalAllQty = 0;
   let totalAllTarget = 0;
   let totalAllCostWL = 0;
@@ -182,15 +240,35 @@ export default function SeedShoppingTracker() {
     <div className="space-y-6 animate-fade-in">
       {/* Header Bar */}
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <FiShoppingCart className="text-green-400 w-6 h-6" />
               Tracker Pembelian Seed
             </h2>
-            <p className="text-xs text-gray-400 mt-1">
-              Catat pertambahan seed otomatis saat belanja di world vend/trade tanpa repot hitung manual.
-            </p>
+
+            {/* Plan Selector & Badge */}
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <span className="text-xs text-gray-400">Terhubung ke Plan:</span>
+              <div className="flex items-center gap-1.5 bg-gray-750 px-2.5 py-1 rounded-lg border border-gray-650">
+                <FiFolder className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                <select
+                  value={currentPlan?.id || ''}
+                  onChange={(e) => handleSwitchPlan(e.target.value)}
+                  className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1"
+                  title="Pilih plan massing untuk melihat tracker belanjanya"
+                >
+                  {allPlanOptions.map((p) => (
+                    <option key={p.id} value={p.id} className="bg-gray-800 text-white">
+                      {p.name || 'Untitled Plan'} ({p.steps?.length || 0} steps)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <span className="text-[11px] text-gray-400">
+                • {trackers.length} target belanja
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -198,10 +276,10 @@ export default function SeedShoppingTracker() {
               type="button"
               onClick={handleImportFromPlanner}
               className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
-              title="Ambil bahan Seed 1 & Seed 2 dari Massing Planner otomatis"
+              title={`Ambil bahan Seed 1 & Seed 2 dari plan "${currentPlan?.name || 'ini'}" otomatis`}
             >
               <FiDownload className="w-4 h-4" />
-              <span>Import dari Planner</span>
+              <span>Import dari Plan Ini</span>
             </button>
             <button
               type="button"
@@ -216,7 +294,7 @@ export default function SeedShoppingTracker() {
                 type="button"
                 onClick={handleClearAll}
                 className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
-                title="Hapus semua tracker"
+                title="Hapus semua tracker pada plan ini"
               >
                 <FiTrash2 className="w-4 h-4" />
               </button>
@@ -238,7 +316,7 @@ export default function SeedShoppingTracker() {
             <div className="p-3 bg-gray-750/70 rounded-xl border border-gray-700">
               <span className="text-[11px] text-gray-400 block mb-0.5">Total Target Seed</span>
               <span className="text-lg font-bold text-white">{formatNumber(totalAllTarget)}</span>
-              <span className="text-[10px] text-gray-500 block">seeds keseluruhan</span>
+              <span className="text-[10px] text-gray-500 block">seeds di plan ini</span>
             </div>
             <div className="p-3 bg-green-500/10 rounded-xl border border-green-500/30">
               <span className="text-[11px] text-green-300 block mb-0.5">Sudah Terbeli</span>
@@ -274,9 +352,9 @@ export default function SeedShoppingTracker() {
             <FiShoppingCart className="w-8 h-8" />
           </div>
           <div className="max-w-md mx-auto space-y-1">
-            <h3 className="text-base font-bold text-white">Belum Ada Target Belanja Seed</h3>
+            <h3 className="text-base font-bold text-white">Belum Ada Target Belanja untuk Plan "{currentPlan?.name || 'Ini'}"</h3>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Buat target belanja baru atau klik <strong>Import dari Planner</strong> untuk langsung memuat bahan Seed 1 & Seed 2 dari Massing Planner Anda.
+              Klik <strong>Import dari Plan Ini</strong> untuk langsung memuat bahan Seed 1 & Seed 2 dari plan ini, atau buat target belanja baru secara manual.
             </p>
           </div>
           <div className="flex flex-wrap justify-center items-center gap-3 pt-2">
@@ -286,7 +364,7 @@ export default function SeedShoppingTracker() {
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shadow-sm"
             >
               <FiDownload className="w-4 h-4" />
-              <span>Import dari Massing Planner</span>
+              <span>Import dari Plan "{currentPlan?.name || 'Aktif'}"</span>
             </button>
             <button
               type="button"
@@ -319,7 +397,7 @@ export default function SeedShoppingTracker() {
           <div className="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-2 border-b border-gray-700">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <FiPlus className="text-green-400" /> Tambah Target Belanja Seed
+                <FiPlus className="text-green-400" /> Tambah Target Belanja ({currentPlan?.name})
               </h3>
               <button
                 type="button"
@@ -402,4 +480,3 @@ export default function SeedShoppingTracker() {
     </div>
   );
 }
-

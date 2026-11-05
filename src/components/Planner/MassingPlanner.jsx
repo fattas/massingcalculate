@@ -80,6 +80,14 @@ export default function MassingPlanner() {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
       name: `${targetPlan.name || 'Untitled Plan'} (Copy)`,
       steps: clonedSteps,
+      shoppingTrackers: (targetPlan.shoppingTrackers || []).map((t, tIdx) => ({
+        ...t,
+        id: Date.now().toString() + '_t_' + tIdx + '_' + Math.random().toString(36).substring(2, 6),
+        purchases: (t.purchases || []).map((p, pIdx) => ({
+          ...p,
+          id: Date.now().toString() + '_tp_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
+        })),
+      })),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

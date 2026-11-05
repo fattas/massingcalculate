@@ -82,6 +82,7 @@ export function createDefaultPlan(overrides = {}) {
     totalFinalOutput: 0,
     harvestBlockMultiplier: 2.77,
     wlToIdrRate: 0,
+    shoppingTrackers: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...overrides,
