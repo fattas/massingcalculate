@@ -6,7 +6,7 @@ import { createDefaultPlan } from '../../data/growtopiaItems';
 import { formatNumber, fmtWL, formatRupiah, calculateCost } from '../../utils/calculations';
 import { FiShoppingCart, FiPlus, FiDownload, FiTrash2, FiCheck, FiX, FiFolder } from 'react-icons/fi';
 
-export default function SeedShoppingTracker() {
+export default function SeedShoppingTracker({ onNavigateToPlanner }) {
   const [currentPlan, setCurrentPlan] = useLocalStorage('gt-current-plan', createDefaultPlan());
   const { plans: savedPlans, savePlan } = useSavedPlans();
 
@@ -167,8 +167,8 @@ export default function SeedShoppingTracker() {
     showNotification(`Berhasil mengambil ${created.length} bahan dari plan "${currentPlan.name}"!`);
   };
 
-  // Apply tracked purchases to Massing Planner
-  const handleApplyToPlanner = ({ cardName, totalQty, totalCostWL, purchases, stepIndex, seedSlot }) => {
+  // Apply tracked purchases to Massing Planner with auto-categorization by price
+  const handleApplyToPlanner = ({ cardName, totalQty, totalCostWL, purchases, groupedPurchases: passedGrouped, stepIndex, seedSlot }) => {
     if (!currentPlan) return;
 
     const newSteps = [...(currentPlan.steps || [])];
@@ -179,31 +179,60 @@ export default function SeedShoppingTracker() {
 
     const step = { ...newSteps[stepIndex] };
 
-    if (purchases.length === 0) {
+    if (!purchases || purchases.length === 0) {
       alert('Belum ada pembelian yang dicatat pada tracker ini.');
       return;
     }
 
-    const first = purchases[0];
-    const extras = purchases.slice(1).map((p) => ({
-      id: p.id || Date.now().toString() + Math.random().toString(36).substr(2, 4),
-      qty: p.qty,
-      price: p.price,
-      priceFormat: p.priceFormat || 'perWL',
+    // Kelompokkan transaksi dengan harga & format yang sama
+    let grouped = passedGrouped;
+    if (!grouped || grouped.length === 0) {
+      const groupsMap = new Map();
+      purchases.forEach((p) => {
+        const price = parseFloat(p.price) || 0;
+        const format = p.priceFormat || 'perWL';
+        const key = `${price}_${format}`;
+        if (!groupsMap.has(key)) {
+          groupsMap.set(key, { price, priceFormat: format, qty: 0, count: 0, firstIndex: groupsMap.size });
+        }
+        const entry = groupsMap.get(key);
+        entry.qty += parseInt(p.qty) || 0;
+        entry.count += 1;
+      });
+      grouped = Array.from(groupsMap.values()).sort((a, b) => {
+        if (b.qty !== a.qty) return b.qty - a.qty;
+        return a.firstIndex - b.firstIndex;
+      });
+    }
+
+    if (grouped.length === 0) return;
+
+    // Batch dengan qty terbanyak menjadi Pembelian Utama, sisanya masuk ke Tambahan Pembelian
+    const primaryBatch = grouped[0];
+    const extraBatches = grouped.slice(1).map((g) => ({
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
+      qty: g.qty,
+      price: g.price,
+      priceFormat: g.priceFormat || 'perWL',
     }));
 
     if (seedSlot === 'seed1') {
       step.seedName1 = cardName || step.seedName1;
-      step.seed1Qty = first.qty;
-      step.seed1Price = first.price;
-      step.seed1PriceFormat = first.priceFormat || 'perWL';
-      step.seed1ExtraPurchases = extras;
+      step.seed1Qty = primaryBatch.qty;
+      step.seed1Price = primaryBatch.price;
+      step.seed1PriceFormat = primaryBatch.priceFormat || 'perWL';
+      step.seed1ExtraPurchases = extraBatches;
     } else {
       step.seedName2 = cardName || step.seedName2;
-      step.seed2Qty = first.qty;
-      step.seed2Price = first.price;
-      step.seed2PriceFormat = first.priceFormat || 'perWL';
-      step.seed2ExtraPurchases = extras;
+      step.seed2Qty = primaryBatch.qty;
+      step.seed2Price = primaryBatch.price;
+      step.seed2PriceFormat = primaryBatch.priceFormat || 'perWL';
+      step.seed2ExtraPurchases = extraBatches;
+    }
+
+    // Jika seedsPlanted belum diset atau masih 0, update dengan total seed yang dibeli
+    if (!step.seedsPlanted || parseInt(step.seedsPlanted) === 0) {
+      step.seedsPlanted = totalQty;
     }
 
     newSteps[stepIndex] = step;
@@ -218,7 +247,13 @@ export default function SeedShoppingTracker() {
       savePlan(updatedPlan);
     }
 
-    showNotification(`Berhasil disalin ke Step ${stepIndex + 1} (${seedSlot === 'seed1' ? 'Seed 1' : 'Seed 2'}) di plan "${currentPlan.name}"!`);
+    const detailMsg = extraBatches.length > 0
+      ? `${formatNumber(primaryBatch.qty)} seed (Utama @ ${primaryBatch.price} ${primaryBatch.priceFormat === 'each' ? 'WL each' : '/WL'}) + ${extraBatches.length} batch harga tambahan`
+      : `${formatNumber(primaryBatch.qty)} seed (Utama @ ${primaryBatch.price} ${primaryBatch.priceFormat === 'each' ? 'WL each' : '/WL'})`;
+
+    showNotification(
+      `Berhasil mengelompokkan & mengirim ke Step ${stepIndex + 1} (${seedSlot === 'seed1' ? 'Seed 1' : 'Seed 2'}): ${detailMsg}!`
+    );
   };
 
   // Grand totals across all trackers in this plan
@@ -304,9 +339,20 @@ export default function SeedShoppingTracker() {
 
         {/* Global Notification Banner */}
         {notice && (
-          <div className="p-2.5 bg-green-500/10 border border-green-500/30 rounded-lg text-xs text-green-300 font-medium flex items-center gap-2 animate-fade-in">
-            <FiCheck className="w-4 h-4 text-green-400" />
-            <span>{notice}</span>
+          <div className="p-2.5 bg-green-500/10 border border-green-500/30 rounded-lg text-xs text-green-300 font-medium flex items-center justify-between gap-2 animate-fade-in">
+            <div className="flex items-center gap-2">
+              <FiCheck className="w-4 h-4 text-green-400 flex-shrink-0" />
+              <span>{notice}</span>
+            </div>
+            {onNavigateToPlanner && (
+              <button
+                type="button"
+                onClick={onNavigateToPlanner}
+                className="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded font-bold text-xs transition-colors flex-shrink-0"
+              >
+                Lihat di Massing Planner ➔
+              </button>
+            )}
           </div>
         )}
 
@@ -386,6 +432,7 @@ export default function SeedShoppingTracker() {
               onDelete={handleDeleteTracker}
               onApplyToPlanner={handleApplyToPlanner}
               plannerSteps={currentPlan?.steps || []}
+              onNavigateToPlanner={onNavigateToPlanner}
             />
           ))}
         </div>

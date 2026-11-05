@@ -70,7 +70,9 @@ export default function App() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         {activeTab === 'planner' && <MassingPlanner />}
-        {activeTab === 'shopping' && <SeedShoppingTracker />}
+        {activeTab === 'shopping' && (
+          <SeedShoppingTracker onNavigateToPlanner={() => setActiveTab('planner')} />
+        )}
         {activeTab === 'inventory' && <InventoryManager />}
       </main>
 

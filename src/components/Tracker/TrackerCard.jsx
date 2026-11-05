@@ -10,6 +10,7 @@ export default function TrackerCard({
   onDelete,
   onApplyToPlanner,
   plannerSteps = [],
+  onNavigateToPlanner,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(card.name);
@@ -100,6 +101,26 @@ export default function TrackerCard({
     }
   };
 
+  // Kelompokkan pembelian berdasarkan harga & format (auto-kategorisasi)
+  const groupedPurchases = (() => {
+    const map = new Map();
+    purchases.forEach((p) => {
+      const price = parseFloat(p.price) || 0;
+      const format = p.priceFormat || 'perWL';
+      const key = `${price}_${format}`;
+      if (!map.has(key)) {
+        map.set(key, { price, priceFormat: format, qty: 0, count: 0, firstIndex: map.size });
+      }
+      const item = map.get(key);
+      item.qty += parseInt(p.qty) || 0;
+      item.count += 1;
+    });
+    return Array.from(map.values()).sort((a, b) => {
+      if (b.qty !== a.qty) return b.qty - a.qty;
+      return a.firstIndex - b.firstIndex;
+    });
+  })();
+
   // Handle Apply to Massing Planner
   const handleConfirmApply = () => {
     if (onApplyToPlanner) {
@@ -109,6 +130,7 @@ export default function TrackerCard({
         totalQty,
         totalCostWL,
         purchases,
+        groupedPurchases,
         stepIndex: selectedStepIndex,
         seedSlot: selectedSeedSlot,
       });
@@ -116,7 +138,7 @@ export default function TrackerCard({
       setTimeout(() => {
         setApplySuccess(false);
         setShowApplyMenu(false);
-      }, 1500);
+      }, 1800);
     }
   };
 
@@ -435,9 +457,12 @@ export default function TrackerCard({
               <span>➔ Kirim Hasil ke Massing Planner</span>
             </button>
           ) : (
-            <div className="p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-lg space-y-2 text-xs animate-fade-in">
+            <div className="p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl space-y-2.5 text-xs animate-fade-in">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-blue-300">Terapkan ke Massing Planner:</span>
+                <span className="font-semibold text-blue-300 flex items-center gap-1.5">
+                  <FiSend className="w-3.5 h-3.5" />
+                  Kirim ke Massing Planner
+                </span>
                 <button
                   type="button"
                   onClick={() => setShowApplyMenu(false)}
@@ -449,7 +474,7 @@ export default function TrackerCard({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] text-gray-400 mb-0.5">Pilih Step:</label>
+                  <label className="block text-[10px] text-gray-400 mb-0.5">Pilih Step Tujuan:</label>
                   <select
                     value={selectedStepIndex}
                     onChange={(e) => setSelectedStepIndex(parseInt(e.target.value) || 0)}
@@ -477,18 +502,84 @@ export default function TrackerCard({
                 </div>
               </div>
 
+              {/* Preview Pengelompokan Kategori Harga Otomatis */}
+              <div className="bg-gray-800/90 rounded-lg p-2 border border-gray-700/80 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-medium text-gray-300">
+                    Auto-Kategorisasi ({groupedPurchases.length} Kategori Harga):
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    Total: <strong className="text-white">{formatNumber(totalQty)}</strong> seeds
+                  </span>
+                </div>
+
+                <div className="space-y-1 max-h-32 overflow-y-auto pr-0.5 scrollbar-thin scrollbar-thumb-gray-600">
+                  {groupedPurchases.map((g, idx) => {
+                    const batchCost = calculateCost(g.qty, g.price, g.priceFormat || 'perWL');
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between text-xs bg-gray-750/90 px-2 py-1 rounded border border-gray-650/80"
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                              idx === 0
+                                ? 'bg-blue-500/25 text-blue-300 border border-blue-500/40'
+                                : 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40'
+                            }`}
+                          >
+                            {idx === 0 ? 'Utama' : `Tambahan #${idx}`}
+                          </span>
+                          <span className="font-bold text-white">
+                            {formatNumber(g.qty)} seeds
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-[10px]">
+                          <span className="text-yellow-400 font-medium">
+                            @ {g.price} {g.priceFormat === 'each' ? 'WL each' : '/ WL'}
+                          </span>
+                          {g.count > 1 && (
+                            <span className="text-gray-300 text-[9px] bg-gray-700 px-1.5 py-0.5 rounded border border-gray-600">
+                              {g.count}x transaksi
+                            </span>
+                          )}
+                          {batchCost > 0 && (
+                            <span className="text-gray-400">
+                              ({fmtWL(batchCost)} WL)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex items-center justify-between pt-1">
                 <span className="text-[11px] text-gray-300">
-                  Total: <strong className="text-white">{formatNumber(totalQty)} seeds</strong> ({fmtWL(totalCostWL)} WL)
+                  Total Biaya: <strong className="text-yellow-400">{fmtWL(totalCostWL)} WL</strong>
                 </span>
-                <button
-                  type="button"
-                  onClick={handleConfirmApply}
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold text-xs transition-colors flex items-center gap-1"
-                >
-                  {applySuccess ? <FiCheck className="w-3.5 h-3.5 text-green-300" /> : <FiSend className="w-3 h-3" />}
-                  <span>{applySuccess ? 'Tersalin!' : 'Konfirmasi Kirim'}</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {applySuccess && onNavigateToPlanner && (
+                    <button
+                      type="button"
+                      onClick={onNavigateToPlanner}
+                      className="px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-blue-300 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
+                    >
+                      <span>Buka Planner ➔</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleConfirmApply}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                  >
+                    {applySuccess ? <FiCheck className="w-3.5 h-3.5 text-green-300" /> : <FiSend className="w-3 h-3" />}
+                    <span>{applySuccess ? 'Tersalin!' : 'Konfirmasi Kirim'}</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
