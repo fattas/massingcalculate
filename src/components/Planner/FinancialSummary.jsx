@@ -1,5 +1,6 @@
-import { calculateStep, formatNumber, formatCurrency, formatTime, fmtWL, formatRupiah } from '../../utils/calculations';
+import { calculateStep, formatNumber, formatCurrency, formatTime, fmtWL, formatRupiah, calculateBEP, formatBEP } from '../../utils/calculations';
 import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiClock, FiZap, FiTarget } from 'react-icons/fi';
+import { FaBalanceScale } from 'react-icons/fa';
 
 export default function FinancialSummary({ plan, onUpdatePlan }) {
   const { steps = [], sellPrice, sellPriceFormat, totalFinalOutput } = plan;
@@ -39,6 +40,13 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
   const roi = totalInvestmentWL > 0 ? (cleanProfitWL / totalInvestmentWL) * 100 : 0;
   const wlToIdrRate = plan.wlToIdrRate || 0;
   const cleanProfitRupiah = cleanProfitWL * wlToIdrRate;
+
+  // BEP (Break-Even Price) Calculations
+  const bepActive = calculateBEP(totalInvestmentWL, effectiveOutput, sellPriceFormat);
+  const bepSeedPerWL = calculateBEP(totalInvestmentWL, finalSplicingSeeds, 'perWL');
+  const bepSeedEach = calculateBEP(totalInvestmentWL, finalSplicingSeeds, 'each');
+  const bepBlockPerWL = calculateBEP(totalInvestmentWL, estimatedHarvestBlocks, 'perWL');
+  const bepBlockEach = calculateBEP(totalInvestmentWL, estimatedHarvestBlocks, 'each');
 
   const cards = [
     {
@@ -105,6 +113,104 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
             <p className="text-xs text-gray-500 mt-1 truncate">{card.detail}</p>
           </div>
         ))}
+      </div>
+
+      {/* Break-Even Price (BEP / Balik Modal) */}
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3.5 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+            <FaBalanceScale className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            Break-Even Price (BEP / Balik Modal)
+          </span>
+          {sellPrice > 0 && totalInvestmentWL > 0 && effectiveOutput > 0 && (
+            <span
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                cleanProfitWL > 0
+                  ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                  : cleanProfitWL < 0
+                  ? 'bg-red-500/10 text-red-400 border-red-500/30'
+                  : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+              }`}
+            >
+              {cleanProfitWL > 0 ? '✅ Di Atas BEP (Untung)' : cleanProfitWL < 0 ? '⚠️ Di Bawah BEP (Rugi)' : '⚖️ Tepat BEP'}
+            </span>
+          )}
+        </div>
+
+        {totalInvestmentWL > 0 && effectiveOutput > 0 ? (
+          <div className="space-y-2.5">
+            {/* Box Utama BEP Aktif */}
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] text-amber-300 font-medium">
+                    Harga Balik Modal ({sellPriceFormat === 'perWL' ? 'qty / WL' : 'WL each'}):
+                  </p>
+                  <p className="text-xl font-bold text-amber-400 mt-0.5">
+                    {formatBEP(bepActive, sellPriceFormat)}
+                  </p>
+                </div>
+                {wlToIdrRate > 0 && (
+                  <div className="text-right">
+                    <p className="text-[10px] text-gray-400">Modal per Item (IDR)</p>
+                    <p className="text-xs font-bold text-white">
+                      Rp {parseFloat(((totalInvestmentWL * wlToIdrRate) / effectiveOutput).toFixed(2))}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] text-gray-300/90 mt-1.5 pt-1.5 border-t border-amber-500/20">
+                {sellPriceFormat === 'perWL' ? (
+                  <>
+                    Jual maksimal <strong className="text-white">{fmtWL(bepActive)} item/WL</strong> agar tidak rugi. Makin sedikit item/WL (misal {Math.max(1, Math.floor(bepActive * 0.8))}/WL) = <span className="text-green-400 font-semibold">Makin Untung</span>.
+                  </>
+                ) : (
+                  <>
+                    Jual minimal <strong className="text-white">{fmtWL(bepActive)} WL each</strong> agar tidak rugi. Makin tinggi harga (misal {fmtWL(bepActive * 1.2)} WL) = <span className="text-green-400 font-semibold">Makin Untung</span>.
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* Perbandingan Jual Seed vs Jual Block */}
+            {(finalSplicingSeeds > 0 || estimatedHarvestBlocks > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                {finalSplicingSeeds > 0 && (
+                  <div className="p-2.5 bg-gray-700/40 border border-gray-650 rounded-lg">
+                    <div className="flex items-center justify-between text-gray-400 text-[11px] mb-1">
+                      <span>🌱 Jika Jual Seed</span>
+                      <span>{formatNumber(finalSplicingSeeds)} seeds</span>
+                    </div>
+                    <p className="text-sm font-bold text-green-400">
+                      {formatBEP(bepSeedPerWL, 'perWL')}
+                    </p>
+                    <p className="text-[10px] text-gray-500">
+                      atau {formatBEP(bepSeedEach, 'each')}
+                    </p>
+                  </div>
+                )}
+                {estimatedHarvestBlocks > 0 && (
+                  <div className="p-2.5 bg-gray-700/40 border border-gray-650 rounded-lg">
+                    <div className="flex items-center justify-between text-gray-400 text-[11px] mb-1">
+                      <span>🌾 Jika Jual Block</span>
+                      <span>{formatNumber(estimatedHarvestBlocks)} blocks</span>
+                    </div>
+                    <p className="text-sm font-bold text-yellow-400">
+                      {formatBEP(bepBlockPerWL, 'perWL')}
+                    </p>
+                    <p className="text-[10px] text-gray-500">
+                      atau {formatBEP(bepBlockEach, 'each')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">
+            Masukkan modal dan jumlah pohon/seed untuk melihat harga balik modal (BEP).
+          </p>
+        )}
       </div>
 
       {/* Konversi ke Rupiah (IDR) */}

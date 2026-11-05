@@ -5,7 +5,7 @@ import SharePlan from './SharePlan';
 import { createDefaultStep, createDefaultPlan } from '../../data/growtopiaItems';
 import { useLocalStorage, useSavedPlans } from '../../hooks/useLocalStorage';
 import { extractPlanFromURL } from '../../utils/sharing';
-import { fmtWL, calculateStep, formatNumber } from '../../utils/calculations';
+import { fmtWL, calculateStep, formatNumber, calculateBEP, formatBEP } from '../../utils/calculations';
 import { FiPlus, FiSave, FiFolder, FiTrash2 } from 'react-icons/fi';
 
 export default function MassingPlanner() {
@@ -183,6 +183,12 @@ export default function MassingPlanner() {
             const estimatedHarvestBlocks = finalSplicingSeeds > 0 && multiplier > 0
               ? Math.floor(finalSplicingSeeds * multiplier)
               : 0;
+            const totalCostWL = stepResults.reduce((sum, r) => sum + r.totalCostWL, 0);
+            const effectiveSellOutput = plan.totalFinalOutput > 0 ? plan.totalFinalOutput : finalSplicingSeeds;
+            const bep = calculateBEP(totalCostWL, effectiveSellOutput, plan.sellPriceFormat || 'perWL');
+            const bepRounded = bep > 0
+              ? (plan.sellPriceFormat === 'each' && bep < 0.1 ? parseFloat(bep.toFixed(4)) : parseFloat(fmtWL(bep)))
+              : 0;
 
             return (
               <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-3">
@@ -309,6 +315,23 @@ export default function MassingPlanner() {
                         : (plan.totalFinalOutput || finalSplicingSeeds) * plan.sellPrice
                       )} WL
                     </p>
+                  )}
+                  {bep > 0 && (
+                    <div className="flex items-center justify-between text-xs mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                      <span className="text-amber-300 font-medium">
+                        ⚖️ BEP: <strong>{formatBEP(bep, plan.sellPriceFormat || 'perWL')}</strong>
+                      </span>
+                      {plan.sellPrice !== bepRounded && (
+                        <button
+                          type="button"
+                          onClick={() => updatePlan({ sellPrice: bepRounded })}
+                          className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold hover:underline"
+                          title="Gunakan harga BEP ini sebagai harga jual"
+                        >
+                          Pakai BEP ➔
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

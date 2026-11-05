@@ -201,3 +201,33 @@ export function formatRupiah(amount) {
   const rounded = Math.round(val);
   return new Intl.NumberFormat('id-ID').format(rounded);
 }
+
+/**
+ * Calculate Break-Even Price (BEP / Balik Modal)
+ * @param {number} totalCostWL - Total modal (investasi) dalam WL
+ * @param {number} totalUnits - Jumlah item yang dijual (seed atau block)
+ * @param {string} format - 'perWL' atau 'each'
+ * @returns {number} Nilai BEP
+ */
+export function calculateBEP(totalCostWL, totalUnits, format = 'perWL') {
+  if (!totalCostWL || totalCostWL <= 0 || !totalUnits || totalUnits <= 0) return 0;
+  if (format === 'each') {
+    return totalCostWL / totalUnits;
+  }
+  return totalUnits / totalCostWL;
+}
+
+/**
+ * Format BEP number with appropriate label
+ */
+export function formatBEP(bep, format = 'perWL') {
+  if (!bep || bep <= 0 || isNaN(bep)) return '0';
+  if (format === 'each') {
+    if (bep >= 1) return `${fmtWL(bep)} WL each`;
+    if (bep >= 0.01) return `${parseFloat(bep.toFixed(2))} WL each`;
+    return `${parseFloat(bep.toFixed(4))} WL each`;
+  }
+  // perWL format
+  if (bep >= 1) return `${fmtWL(bep)} / WL`;
+  return `${parseFloat(bep.toFixed(2))} / WL`;
+}
