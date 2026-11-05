@@ -113,6 +113,17 @@ export function calculateStep(step) {
   const actualTmGemsCostWL = useTM ? (parseFloat(tmGemsCostWL) || 0) : 0;
   const totalCostWL = seed1CostWL + seed2CostWL + fuelCostWL + actualTmGemsCostWL;
 
+  // TM Calculations: Estimasi Harvest Block, Gems & Waktu Break
+  const tmBlockMultiplier = step.tmBlockMultiplier !== undefined ? step.tmBlockMultiplier : 2.77;
+  const tmEstimatedBlocks = (seedsPlanted > 0 && tmBlockMultiplier > 0)
+    ? Math.floor(seedsPlanted * tmBlockMultiplier)
+    : 0;
+  const tmHitsPerBlock = hitsPerBlock || 1;
+  const tmGemsNeeded = useTM ? calculateGemsConsumed(tmEstimatedBlocks, tmHitsPerBlock) : 0;
+  const tmBreakTime = useTM
+    ? calculateBreakTime(tmEstimatedBlocks, tmHitsPerBlock, tmCount)
+    : { totalSeconds: 0, formatted: '0 detik' };
+
   return {
     totalTrees,
     seedsAfterHarvest,
@@ -121,6 +132,9 @@ export function calculateStep(step) {
     totalSeed1Qty,
     totalSeed2Qty,
     fuelCostWL,
+    tmEstimatedBlocks,
+    tmGemsNeeded,
+    tmBreakTime,
     tmGemsCostWL: actualTmGemsCostWL,
     tmGemsAmount: useTM ? (parseInt(tmGemsAmount) || 0) : 0,
     totalCostWL,

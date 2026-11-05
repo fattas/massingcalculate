@@ -38,6 +38,7 @@ export function createDefaultStep(overrides = {}) {
     hitsPerBlock: 4,
     tmCount: 8,
     useTM: true,
+    tmBlockMultiplier: 2.77,
 
     // Seed 1
     seed1Qty: 0,
