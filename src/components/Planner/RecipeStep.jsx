@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import ItemSearch from '../Common/ItemSearch';
 import ItemIcon from '../Common/ItemIcon';
+import ConfirmModal from '../Common/ConfirmModal';
 import { calculateStep, formatNumber, fmtWL } from '../../utils/calculations';
-import { FiTrash2, FiChevronDown, FiChevronUp, FiCpu, FiPlus, FiClock, FiCopy } from 'react-icons/fi';
+import { FiTrash2, FiChevronDown, FiChevronUp, FiCpu, FiPlus, FiClock, FiCopy, FiCheck } from 'react-icons/fi';
 
 function PriceInput({ price, priceFormat, onPriceChange, onFormatChange }) {
   return (
@@ -39,6 +40,7 @@ export default function RecipeStep({
   onApplyPrevStep,
 }) {
   const [expanded, setExpanded] = useState(true);
+  const [extraToDelete, setExtraToDelete] = useState(null);
 
   const results = calculateStep(step);
 
@@ -171,27 +173,81 @@ export default function RecipeStep({
     : 0;
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden animate-fade-in">
+    <div
+      className={`border rounded-xl overflow-hidden transition-all duration-200 animate-fade-in ${
+        step.isCompleted
+          ? 'bg-gradient-to-b from-gray-800 to-gray-800/90 border-emerald-500/60 ring-1 ring-emerald-500/20 shadow-md shadow-emerald-500/10'
+          : 'bg-gray-800 border-gray-700'
+      }`}
+    >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 bg-gray-800 hover:bg-gray-750 cursor-pointer"
+        className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${
+          step.isCompleted ? 'bg-emerald-950/20 hover:bg-emerald-950/30' : 'bg-gray-800 hover:bg-gray-750'
+        }`}
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-green-500/20 text-green-400 rounded-lg flex items-center justify-center font-bold text-sm">
-            {index + 1}
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Step Number with Completed Checkmark indicator */}
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0 transition-colors ${
+              step.isCompleted
+                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/40'
+                : 'bg-green-500/20 text-green-400'
+            }`}
+          >
+            {step.isCompleted ? <FiCheck className="w-4 h-4 stroke-[3]" /> : index + 1}
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-white">
-              {step.name || `Step ${index + 1}`}
-            </h3>
-            <p className="text-xs text-gray-400">
+
+          {/* Step Name & Info */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className={`text-sm font-semibold truncate ${step.isCompleted ? 'text-emerald-300' : 'text-white'}`}>
+                {step.name || `Step ${index + 1}`}
+              </h3>
+              {step.isCompleted && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Selesai
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 truncate">
               {step.resultItemName || 'Belum ditentukan'}
               {step.useTM && ` • ${step.tmCount} TM`}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+
+        {/* Right Header: Toggle Done Button + Actions */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Selesai / Belum Toggle Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFieldChange('isCompleted', !step.isCompleted);
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all active:scale-95 ${
+              step.isCompleted
+                ? 'bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/35 shadow-sm'
+                : 'bg-gray-700/80 border border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700 hover:border-gray-500'
+            }`}
+            title={step.isCompleted ? 'Klik untuk membatalkan status selesai' : 'Klik untuk menandai step ini sudah selesai dikerjakan'}
+          >
+            <span
+              className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-colors ${
+                step.isCompleted
+                  ? 'bg-emerald-500 border-emerald-400 text-white'
+                  : 'border-gray-400 bg-gray-800'
+              }`}
+            >
+              {step.isCompleted && <FiCheck className="w-2.5 h-2.5 stroke-[3]" />}
+            </span>
+            <span className="hidden sm:inline">
+              {step.isCompleted ? 'Selesai' : 'Tandai Selesai'}
+            </span>
+          </button>
+
           {onDuplicate && (
             <button
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
@@ -309,7 +365,17 @@ export default function RecipeStep({
                           )}
                           <button
                             type="button"
-                            onClick={() => handleRemoveSeed1Extra(extra.id)}
+                            onClick={() =>
+                              setExtraToDelete({
+                                slot: 'seed1',
+                                id: extra.id,
+                                index: idx + 1,
+                                qty: extra.qty,
+                                price: extra.price,
+                                priceFormat: extra.priceFormat || 'perWL',
+                                seedName: step.seedName1 || 'Seed 1',
+                              })
+                            }
                             className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
                             title="Hapus field tambahan ini"
                           >
@@ -429,7 +495,17 @@ export default function RecipeStep({
                           )}
                           <button
                             type="button"
-                            onClick={() => handleRemoveSeed2Extra(extra.id)}
+                            onClick={() =>
+                              setExtraToDelete({
+                                slot: 'seed2',
+                                id: extra.id,
+                                index: idx + 1,
+                                qty: extra.qty,
+                                price: extra.price,
+                                priceFormat: extra.priceFormat || 'perWL',
+                                seedName: step.seedName2 || 'Seed 2',
+                              })
+                            }
                             className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
                             title="Hapus field tambahan ini"
                           >
@@ -809,6 +885,25 @@ export default function RecipeStep({
           </div>
         </div>
       )}
+
+      {/* Modal Konfirmasi Hapus Tambahan Pembelian Seed */}
+      <ConfirmModal
+        isOpen={Boolean(extraToDelete)}
+        onClose={() => setExtraToDelete(null)}
+        onConfirm={() => {
+          if (extraToDelete) {
+            if (extraToDelete.slot === 'seed1') {
+              handleRemoveSeed1Extra(extraToDelete.id);
+            } else {
+              handleRemoveSeed2Extra(extraToDelete.id);
+            }
+          }
+        }}
+        title="Hapus Tambahan Pembelian?"
+        message={`Apakah Anda yakin ingin menghapus batch Tambahan #${extraToDelete?.index} (${formatNumber(extraToDelete?.qty || 0)} seeds @ ${extraToDelete?.price || 0} ${extraToDelete?.priceFormat === 'each' ? 'WL each' : '/ WL'}) untuk ${extraToDelete?.seedName || 'seed ini'}?`}
+        confirmText="Ya, Hapus"
+        cancelText="Batal"
+      />
     </div>
   );
 }

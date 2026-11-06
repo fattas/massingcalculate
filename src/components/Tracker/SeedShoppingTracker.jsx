@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import TrackerCard from './TrackerCard';
 import ItemSearch from '../Common/ItemSearch';
+import ConfirmModal from '../Common/ConfirmModal';
 import { useLocalStorage, useSavedPlans } from '../../hooks/useLocalStorage';
 import { createDefaultPlan } from '../../data/growtopiaItems';
 import { formatNumber, fmtWL, formatRupiah, calculateCost } from '../../utils/calculations';
@@ -9,6 +10,7 @@ import { FiShoppingCart, FiPlus, FiDownload, FiTrash2, FiCheck, FiX, FiFolder } 
 export default function SeedShoppingTracker({ onNavigateToPlanner }) {
   const [currentPlan, setCurrentPlan] = useLocalStorage('gt-current-plan', createDefaultPlan());
   const { plans: savedPlans, savePlan } = useSavedPlans();
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
 
   // Combine saved plans + current plan into selectable list
   const allPlansMap = new Map();
@@ -105,20 +107,16 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
     updateTrackers(updatedList);
   };
 
-  // Delete a tracker card
+  // Delete a tracker card (confirmation handled by TrackerCard modal)
   const handleDeleteTracker = (trackerId) => {
-    const target = trackers.find((t) => t.id === trackerId);
-    if (window.confirm(`Hapus tracker untuk "${target?.name || 'item ini'}" dari plan ini?`)) {
-      const updatedList = trackers.filter((t) => t.id !== trackerId);
-      updateTrackers(updatedList);
-    }
+    const updatedList = trackers.filter((t) => t.id !== trackerId);
+    updateTrackers(updatedList);
   };
 
   // Clear all trackers in this plan
   const handleClearAll = () => {
-    if (window.confirm(`Yakin ingin menghapus semua catatan tracker belanja pada plan "${currentPlan.name || 'ini'}"?`)) {
-      updateTrackers([]);
-    }
+    updateTrackers([]);
+    setShowClearAllConfirm(false);
   };
 
   // Import items from current active plan
@@ -327,7 +325,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
             {trackers.length > 0 && (
               <button
                 type="button"
-                onClick={handleClearAll}
+                onClick={() => setShowClearAllConfirm(true)}
                 className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
                 title="Hapus semua tracker pada plan ini"
               >
@@ -524,6 +522,17 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
           </div>
         </div>
       )}
+
+      {/* Modal Konfirmasi Hapus Semua Tracker Belanja */}
+      <ConfirmModal
+        isOpen={showClearAllConfirm}
+        onClose={() => setShowClearAllConfirm(false)}
+        onConfirm={handleClearAll}
+        title="Hapus Semua Target Belanja?"
+        message={`Apakah Anda yakin ingin menghapus semua (${trackers.length}) target belanja dan riwayatnya pada plan "${currentPlan?.name || 'ini'}"?`}
+        confirmText="Ya, Hapus Semua"
+        cancelText="Batal"
+      />
     </div>
   );
 }

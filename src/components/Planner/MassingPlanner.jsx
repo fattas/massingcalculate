@@ -2,17 +2,20 @@ import { useState, useEffect } from 'react';
 import RecipeStep from './RecipeStep';
 import FinancialSummary from './FinancialSummary';
 import SharePlan from './SharePlan';
+import ConfirmModal from '../Common/ConfirmModal';
 import { createDefaultStep, createDefaultPlan } from '../../data/growtopiaItems';
 import { useLocalStorage, useSavedPlans } from '../../hooks/useLocalStorage';
 import { extractPlanFromURL } from '../../utils/sharing';
 import { fmtWL, calculateStep, formatNumber, calculateBEP, formatBEP } from '../../utils/calculations';
-import { FiPlus, FiSave, FiFolder, FiTrash2, FiCopy } from 'react-icons/fi';
+import { FiPlus, FiSave, FiFolder, FiTrash2, FiCopy, FiCheckCircle } from 'react-icons/fi';
 
 export default function MassingPlanner() {
   const [plan, setPlan] = useLocalStorage('gt-current-plan', createDefaultPlan());
   const { plans: savedPlans, savePlan, deletePlan } = useSavedPlans();
   const [showSavedPlans, setShowSavedPlans] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
+  const [stepToDelete, setStepToDelete] = useState(null);
+  const [planToDelete, setPlanToDelete] = useState(null);
 
   // Check URL for shared plan on mount
   useEffect(() => {
@@ -65,6 +68,7 @@ export default function MassingPlanner() {
     const clonedSteps = (targetPlan.steps || []).map((step, idx) => ({
       ...step,
       id: Date.now().toString() + '_' + idx + '_' + Math.random().toString(36).substring(2, 7),
+      isCompleted: false,
       seed1ExtraPurchases: (step.seed1ExtraPurchases || []).map((p, pIdx) => ({
         ...p,
         id: Date.now().toString() + '_p1_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
@@ -117,6 +121,7 @@ export default function MassingPlanner() {
       ...stepToClone,
       id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
       name: stepToClone.name ? `${stepToClone.name} (Copy)` : '',
+      isCompleted: false,
       seed1ExtraPurchases: (stepToClone.seed1ExtraPurchases || []).map((p, pIdx) => ({
         ...p,
         id: Date.now().toString() + '_p1_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
@@ -218,9 +223,7 @@ export default function MassingPlanner() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (window.confirm(`Hapus plan "${sp.name}"?`)) {
-                        deletePlan(sp.id);
-                      }
+                      setPlanToDelete(sp);
                     }}
                     className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
                     title="Hapus plan"
@@ -238,15 +241,59 @@ export default function MassingPlanner() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Steps */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Tahapan Splicing & Farm</h2>
-            <button
-              onClick={addStep}
-              className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              <FiPlus className="w-4 h-4" /> Tambah Step
-            </button>
-          </div>
+          {(() => {
+            const totalSteps = plan.steps?.length || 0;
+            const completedSteps = (plan.steps || []).filter((s) => s.isCompleted).length;
+            const completedPercent = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+            return (
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="text-lg font-bold text-white">Tahapan Splicing & Farm</h2>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-gray-800 text-gray-300 border border-gray-700">
+                      {completedSteps} / {totalSteps} Selesai
+                    </span>
+                    {completedSteps === totalSteps && totalSteps > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse">
+                        🎉 Selesai Semua!
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={addStep}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors self-start sm:self-auto"
+                  >
+                    <FiPlus className="w-4 h-4" /> Tambah Step
+                  </button>
+                </div>
+
+                {/* Progress Bar Pengerjaan Step */}
+                {totalSteps > 0 && (
+                  <div className="bg-gray-800/80 border border-gray-700/80 rounded-xl p-3 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400 font-medium flex items-center gap-1.5">
+                        <FiCheckCircle className={completedPercent === 100 ? 'text-emerald-400' : 'text-blue-400'} />
+                        Progress Pengerjaan: <strong className="text-white">{completedSteps} dari {totalSteps} step</strong>
+                      </span>
+                      <span className={`font-bold ${completedPercent === 100 ? 'text-emerald-400' : 'text-white'}`}>
+                        {completedPercent}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-500 ${
+                          completedPercent === 100
+                            ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50'
+                            : 'bg-gradient-to-r from-blue-500 to-green-500'
+                        }`}
+                        style={{ width: `${completedPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {plan.steps.map((step, index) => {
             const prevStepResult = index > 0 ? calculateStep(plan.steps[index - 1]) : null;
@@ -264,7 +311,7 @@ export default function MassingPlanner() {
                   });
                 }}
                 onUpdate={(updated) => updateStep(index, updated)}
-                onRemove={() => removeStep(index)}
+                onRemove={() => setStepToDelete({ index, name: step.name || `Step ${index + 1}` })}
                 onDuplicate={() => duplicateStep(index)}
                 isOnly={plan.steps.length === 1}
               />
@@ -443,6 +490,38 @@ export default function MassingPlanner() {
           <FinancialSummary plan={plan} onUpdatePlan={updatePlan} />
         </div>
       </div>
+
+      {/* Modal Konfirmasi Hapus Step */}
+      <ConfirmModal
+        isOpen={Boolean(stepToDelete)}
+        onClose={() => setStepToDelete(null)}
+        onConfirm={() => {
+          if (stepToDelete) {
+            removeStep(stepToDelete.index);
+            setStepToDelete(null);
+          }
+        }}
+        title={`Hapus ${stepToDelete?.name}?`}
+        message={`Apakah Anda yakin ingin menghapus Step ${stepToDelete ? stepToDelete.index + 1 : ''} (${stepToDelete?.name})? Seluruh kalkulasi pohon, TM, dan modalnya akan dihapus.`}
+        confirmText="Ya, Hapus Step"
+        cancelText="Batal"
+      />
+
+      {/* Modal Konfirmasi Hapus Saved Plan */}
+      <ConfirmModal
+        isOpen={Boolean(planToDelete)}
+        onClose={() => setPlanToDelete(null)}
+        onConfirm={() => {
+          if (planToDelete) {
+            deletePlan(planToDelete.id);
+            setPlanToDelete(null);
+          }
+        }}
+        title={`Hapus Plan "${planToDelete?.name}"?`}
+        message={`Apakah Anda yakin ingin menghapus plan "${planToDelete?.name}"? Plan yang tersimpan ini akan dihapus permanen dari browser Anda.`}
+        confirmText="Ya, Hapus Plan"
+        cancelText="Batal"
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useInventory } from '../../hooks/useLocalStorage';
 import ItemSearch from '../Common/ItemSearch';
 import ItemIcon from '../Common/ItemIcon';
+import ConfirmModal from '../Common/ConfirmModal';
 import { formatNumber, fmtWL } from '../../utils/calculations';
 import { FiPlus, FiTrash2, FiEdit3, FiShoppingCart, FiPackage, FiDollarSign, FiFilter, FiX, FiCheck, FiArrowDown, FiArrowUp } from 'react-icons/fi';
 
@@ -9,6 +10,8 @@ export default function InventoryManager() {
   const { items, transactions, addTransaction, removeItem, updateItem, removeTransaction, getTotalAssetValue } = useInventory();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [txToDelete, setTxToDelete] = useState(null);
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
 
@@ -161,8 +164,9 @@ export default function InventoryManager() {
                         <FiEdit3 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => setItemToDelete(item)}
                         className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        title="Hapus item dari inventory"
                       >
                         <FiTrash2 className="w-4 h-4" />
                       </button>
@@ -236,8 +240,9 @@ export default function InventoryManager() {
                     {tx.notes && <p className="text-xs text-gray-500 mt-0.5">{tx.notes}</p>}
                   </div>
                   <button
-                    onClick={() => removeTransaction(tx.id)}
+                    onClick={() => setTxToDelete(tx)}
                     className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    title="Hapus riwayat transaksi ini"
                   >
                     <FiTrash2 className="w-3.5 h-3.5" />
                   </button>
@@ -420,6 +425,38 @@ export default function InventoryManager() {
           </div>
         </div>
       )}
+
+      {/* Modal Konfirmasi Hapus Item Inventory */}
+      <ConfirmModal
+        isOpen={Boolean(itemToDelete)}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={() => {
+          if (itemToDelete) {
+            removeItem(itemToDelete.id);
+            setItemToDelete(null);
+          }
+        }}
+        title={`Hapus Item "${itemToDelete?.name}"?`}
+        message={`Item ini beserta jumlah stoknya (${formatNumber(itemToDelete?.quantity || 0)}) akan dihapus dari inventory.`}
+        confirmText="Ya, Hapus Item"
+        cancelText="Batal"
+      />
+
+      {/* Modal Konfirmasi Hapus Transaksi */}
+      <ConfirmModal
+        isOpen={Boolean(txToDelete)}
+        onClose={() => setTxToDelete(null)}
+        onConfirm={() => {
+          if (txToDelete) {
+            removeTransaction(txToDelete.id);
+            setTxToDelete(null);
+          }
+        }}
+        title="Hapus Riwayat Transaksi?"
+        message={`Apakah Anda yakin ingin menghapus catatan transaksi ${txToDelete?.type?.toUpperCase()} untuk "${txToDelete?.itemName}"?`}
+        confirmText="Ya, Hapus Log"
+        cancelText="Batal"
+      />
     </div>
   );
 }

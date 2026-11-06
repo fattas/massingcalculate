@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ItemIcon from '../Common/ItemIcon';
 import ItemSearch from '../Common/ItemSearch';
+import ConfirmModal from '../Common/ConfirmModal';
 import { formatNumber, fmtWL, calculateCost } from '../../utils/calculations';
 import { FiTrash2, FiPlus, FiEdit2, FiCheck, FiX, FiSend, FiClock } from 'react-icons/fi';
 
@@ -28,6 +29,11 @@ export default function TrackerCard({
   const [selectedStepIndex, setSelectedStepIndex] = useState(0);
   const [selectedSeedSlot, setSelectedSeedSlot] = useState('seed1');
   const [applySuccess, setApplySuccess] = useState(false);
+
+  // Modal confirmation states
+  const [purchaseToDelete, setPurchaseToDelete] = useState(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showDeleteCardConfirm, setShowDeleteCardConfirm] = useState(false);
 
   // Calculations
   const purchases = card.purchases || [];
@@ -93,12 +99,11 @@ export default function TrackerCard({
 
   // Clear all purchases
   const handleClearPurchases = () => {
-    if (window.confirm(`Yakin ingin mengosongkan semua riwayat pembelian untuk ${card.name || 'seed ini'}?`)) {
-      onUpdate({
-        ...card,
-        purchases: [],
-      });
-    }
+    onUpdate({
+      ...card,
+      purchases: [],
+    });
+    setShowResetConfirm(false);
   };
 
   // Kelompokkan pembelian berdasarkan harga & format (auto-kategorisasi)
@@ -246,7 +251,7 @@ export default function TrackerCard({
               </button>
               <button
                 type="button"
-                onClick={() => onDelete(card.id)}
+                onClick={() => setShowDeleteCardConfirm(true)}
                 className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                 title="Hapus Tracker"
               >
@@ -384,7 +389,7 @@ export default function TrackerCard({
             {purchases.length > 0 && (
               <button
                 type="button"
-                onClick={handleClearPurchases}
+                onClick={() => setShowResetConfirm(true)}
                 className="text-[11px] text-red-400 hover:underline"
               >
                 Reset Riwayat
@@ -429,7 +434,7 @@ export default function TrackerCard({
                       {item.time && <span className="text-[10px] text-gray-500">{item.time}</span>}
                       <button
                         type="button"
-                        onClick={() => handleRemovePurchase(item.id)}
+                        onClick={() => setPurchaseToDelete({ item, originalIndex })}
                         className="p-1 text-gray-400 hover:text-red-400 rounded transition-colors"
                         title="Hapus entri ini"
                       >
@@ -585,6 +590,47 @@ export default function TrackerCard({
           )}
         </div>
       </div>
+
+      {/* Modal Konfirmasi Hapus 1 Transaksi Riwayat */}
+      <ConfirmModal
+        isOpen={Boolean(purchaseToDelete)}
+        onClose={() => setPurchaseToDelete(null)}
+        onConfirm={() => {
+          if (purchaseToDelete?.item) {
+            handleRemovePurchase(purchaseToDelete.item.id);
+            setPurchaseToDelete(null);
+          }
+        }}
+        title="Hapus Catatan Pembelian?"
+        message={`Apakah Anda yakin ingin menghapus transaksi #${purchaseToDelete?.originalIndex} (+${formatNumber(purchaseToDelete?.item?.qty || 0)} seeds @ ${purchaseToDelete?.item?.price || 0} ${purchaseToDelete?.item?.priceFormat === 'each' ? 'WL each' : '/ WL'}) dari riwayat?`}
+        confirmText="Ya, Hapus"
+        cancelText="Batal"
+      />
+
+      {/* Modal Konfirmasi Reset Semua Riwayat Pembelian */}
+      <ConfirmModal
+        isOpen={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={handleClearPurchases}
+        title="Reset Riwayat Pembelian?"
+        message={`Apakah Anda yakin ingin mengosongkan semua riwayat pembelian untuk "${card.name}"? Total seed terkumpul (${formatNumber(totalQty)}) akan kembali ke 0.`}
+        confirmText="Ya, Reset Semua"
+        cancelText="Batal"
+      />
+
+      {/* Modal Konfirmasi Hapus Tracker Belanja */}
+      <ConfirmModal
+        isOpen={showDeleteCardConfirm}
+        onClose={() => setShowDeleteCardConfirm(false)}
+        onConfirm={() => {
+          setShowDeleteCardConfirm(false);
+          onDelete(card.id);
+        }}
+        title={`Hapus Tracker "${card.name}"?`}
+        message={`Apakah Anda yakin ingin menghapus target belanja untuk "${card.name}" beserta seluruh riwayat pembeliannya dari plan ini?`}
+        confirmText="Ya, Hapus Tracker"
+        cancelText="Batal"
+      />
     </div>
   );
 }
