@@ -40,6 +40,7 @@ export function createDefaultStep(overrides = {}) {
     useTM: true,
     tmBlockMultiplier: 2.77,
     isCompleted: false,
+    isExpanded: true,
 
     // Seed 1
     seed1Qty: 0,

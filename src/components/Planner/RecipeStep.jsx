@@ -39,7 +39,7 @@ export default function RecipeStep({
   prevStepSeeds = 0,
   onApplyPrevStep,
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const isExpanded = step.isExpanded !== undefined ? Boolean(step.isExpanded) : true;
   const [extraToDelete, setExtraToDelete] = useState(null);
 
   const results = calculateStep(step);
@@ -185,7 +185,7 @@ export default function RecipeStep({
         className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${
           step.isCompleted ? 'bg-emerald-950/20 hover:bg-emerald-950/30' : 'bg-gray-800 hover:bg-gray-750'
         }`}
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => handleFieldChange('isExpanded', !isExpanded)}
       >
         <div className="flex items-center gap-3 min-w-0">
           {/* Step Number with Completed Checkmark indicator */}
@@ -266,12 +266,12 @@ export default function RecipeStep({
               <FiTrash2 className="w-4 h-4" />
             </button>
           )}
-          {expanded ? <FiChevronUp className="w-4 h-4 text-gray-400" /> : <FiChevronDown className="w-4 h-4 text-gray-400" />}
+          {isExpanded ? <FiChevronUp className="w-4 h-4 text-gray-400" /> : <FiChevronDown className="w-4 h-4 text-gray-400" />}
         </div>
       </div>
 
       {/* Content */}
-      {expanded && (
+      {isExpanded && (
         <div className="p-4 border-t border-gray-700 space-y-4">
           {/* Step Name */}
           <div>

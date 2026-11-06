@@ -45,6 +45,14 @@ export default function MassingPlanner() {
     updatePlan({ steps: newSteps.length > 0 ? newSteps : [createDefaultStep()] });
   };
 
+  const handleToggleAllSteps = (isExpanded) => {
+    const newSteps = (plan.steps || []).map((s) => ({
+      ...s,
+      isExpanded,
+    }));
+    updatePlan({ steps: newSteps });
+  };
+
   const handleSavePlan = () => {
     savePlan(plan);
     setSaveNotice('Tersimpan!');
@@ -69,6 +77,7 @@ export default function MassingPlanner() {
       ...step,
       id: Date.now().toString() + '_' + idx + '_' + Math.random().toString(36).substring(2, 7),
       isCompleted: false,
+      isExpanded: step.isExpanded !== undefined ? step.isExpanded : true,
       seed1ExtraPurchases: (step.seed1ExtraPurchases || []).map((p, pIdx) => ({
         ...p,
         id: Date.now().toString() + '_p1_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
@@ -122,6 +131,7 @@ export default function MassingPlanner() {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
       name: stepToClone.name ? `${stepToClone.name} (Copy)` : '',
       isCompleted: false,
+      isExpanded: true,
       seed1ExtraPurchases: (stepToClone.seed1ExtraPurchases || []).map((p, pIdx) => ({
         ...p,
         id: Date.now().toString() + '_p1_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
@@ -259,12 +269,35 @@ export default function MassingPlanner() {
                       </span>
                     )}
                   </div>
-                  <button
-                    onClick={addStep}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors self-start sm:self-auto"
-                  >
-                    <FiPlus className="w-4 h-4" /> Tambah Step
-                  </button>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {totalSteps > 1 && (
+                      <div className="flex items-center bg-gray-800 p-0.5 rounded-lg border border-gray-700 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAllSteps(false)}
+                          className="px-2.5 py-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors text-[11px] font-medium"
+                          title="Tutup (ringkas) semua step"
+                        >
+                          Tutup Semua
+                        </button>
+                        <span className="text-gray-600">|</span>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAllSteps(true)}
+                          className="px-2.5 py-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors text-[11px] font-medium"
+                          title="Buka semua step"
+                        >
+                          Buka Semua
+                        </button>
+                      </div>
+                    )}
+                    <button
+                      onClick={addStep}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <FiPlus className="w-4 h-4" /> Tambah Step
+                    </button>
+                  </div>
                 </div>
 
                 {/* Progress Bar Pengerjaan Step */}
