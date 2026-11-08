@@ -14,52 +14,52 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('planner');
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
       {/* Top Navbar */}
-      <nav className="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4">
+      <nav className="bg-gray-800/90 backdrop-blur-md border-b border-gray-700/80 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                <FiGitBranch className="w-5 h-5 text-white" />
+            {/* Brand Logo */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center shadow-sm shadow-emerald-500/20">
+                <FiGitBranch className="w-4 h-4 text-white stroke-[2.5]" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-white leading-tight">GT Massing Calculator</h1>
-                <p className="text-[10px] text-gray-500 leading-tight">Growtopia Profit & Loss Tracker</p>
+                <h1 className="text-sm font-bold text-white tracking-tight leading-none">GT Massing Calculator</h1>
+                <p className="text-[10px] text-gray-400 leading-tight mt-0.5">Growtopia Profit & Loss Tracker</p>
               </div>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-gray-850 p-1 rounded-xl border border-gray-700/60">
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
                     activeTab === tab.id
-                      ? 'bg-green-600 text-white shadow-lg shadow-green-600/20'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-750'
                   }`}
                 >
-                  <tab.icon className="w-4 h-4" />
+                  <tab.icon className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </div>
 
-            {/* Currency Display */}
-            <div className="hidden md:flex items-center gap-4 text-xs text-gray-400">
-              <div className="flex items-center gap-1">
-                <span className="w-4 h-4 bg-yellow-500 rounded-sm flex items-center justify-center text-[8px] font-bold text-black">W</span>
+            {/* Currency Legend */}
+            <div className="hidden md:flex items-center gap-3 text-xs text-gray-400">
+              <div className="flex items-center gap-1.5">
+                <span className="w-4 h-4 bg-yellow-500 rounded flex items-center justify-center text-[9px] font-bold text-black">W</span>
                 <span>World Lock</span>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="w-4 h-4 bg-blue-500 rounded-sm flex items-center justify-center text-[8px] font-bold text-white">D</span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center text-[9px] font-bold text-white">D</span>
                 <span>= 100 WL</span>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="w-4 h-4 bg-purple-500 rounded-sm flex items-center justify-center text-[8px] font-bold text-white">B</span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[9px] font-bold text-white">B</span>
                 <span>= 100 DL</span>
               </div>
             </div>
@@ -67,8 +67,8 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      {/* Main App Content */}
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex-1">
         {activeTab === 'planner' && <MassingPlanner />}
         {activeTab === 'shopping' && (
           <SeedShoppingTracker onNavigateToPlanner={() => setActiveTab('planner')} />
@@ -77,10 +77,9 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-4 text-center text-xs text-gray-600">
-        GT Massing Calculator • Data tersimpan di browser Anda (localStorage) • Tidak ada database eksternal
+      <footer className="border-t border-gray-800/80 py-4 text-center text-xs text-gray-500">
+        GT Massing Calculator • Data tersimpan otomatis di browser (localStorage)
       </footer>
     </div>
   );
 }
-

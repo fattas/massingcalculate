@@ -89,14 +89,6 @@ export default function TrackerCard({
     setInputQty(amount);
   };
 
-  // Handle Remove Purchase
-  const handleRemovePurchase = (purchaseId) => {
-    onUpdate({
-      ...card,
-      purchases: purchases.filter((p) => p.id !== purchaseId),
-    });
-  };
-
   // Clear all purchases
   const handleClearPurchases = () => {
     onUpdate({
@@ -106,7 +98,7 @@ export default function TrackerCard({
     setShowResetConfirm(false);
   };
 
-  // Kelompokkan pembelian berdasarkan harga & format (auto-kategorisasi)
+  // Group purchases by price & format for auto-categorization
   const groupedPurchases = (() => {
     const map = new Map();
     purchases.forEach((p) => {
@@ -143,16 +135,16 @@ export default function TrackerCard({
       setTimeout(() => {
         setApplySuccess(false);
         setShowApplyMenu(false);
-      }, 1800);
+      }, 1500);
     }
   };
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg flex flex-col justify-between animate-fade-in">
-      {/* Top Bar / Header */}
-      <div className="p-4 bg-gray-750/70 border-b border-gray-700/80">
+    <div className="bg-gray-800 border border-gray-700/80 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between animate-fade-in">
+      {/* Top Header Section */}
+      <div className="p-4 bg-gray-750/50 border-b border-gray-700/70">
         {isEditing ? (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <div>
               <label className="block text-[11px] font-medium text-gray-400 mb-1">Nama Item / Seed</label>
               <ItemSearch
@@ -163,23 +155,23 @@ export default function TrackerCard({
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[11px] font-medium text-gray-400 mb-1">Target Beli (seeds)</label>
+                <label className="block text-[11px] font-medium text-gray-400 mb-1">Target Beli</label>
                 <input
                   type="number"
                   value={editTarget || ''}
                   onChange={(e) => setEditTarget(e.target.value)}
-                  placeholder="Misal: 2641"
-                  className="w-full px-2.5 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:ring-2 focus:ring-green-500"
+                  placeholder="2000"
+                  className="w-full px-2.5 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-gray-400 mb-1">Harga Beli Bawaan</label>
+                <label className="block text-[11px] font-medium text-gray-400 mb-1">Harga Bawaan</label>
                 <div className="flex gap-1">
                   <input
                     type="number"
                     value={editPrice || ''}
                     onChange={(e) => setEditPrice(e.target.value)}
-                    placeholder="Contoh: 3"
+                    placeholder="3"
                     className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs"
                   />
                   <select
@@ -193,7 +185,7 @@ export default function TrackerCard({
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="flex justify-end gap-1.5 pt-1">
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
@@ -204,7 +196,7 @@ export default function TrackerCard({
               <button
                 type="button"
                 onClick={handleSaveEdit}
-                className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold flex items-center gap-1"
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold flex items-center gap-1"
               >
                 <FiCheck className="w-3.5 h-3.5" /> Simpan
               </button>
@@ -213,21 +205,23 @@ export default function TrackerCard({
         ) : (
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <ItemIcon name={card.name} size={40} className="rounded-lg shadow" />
+              <ItemIcon name={card.name} size={38} className="rounded-lg shadow shrink-0" />
               <div className="min-w-0">
-                <h3 className="font-bold text-white text-sm sm:text-base truncate flex items-center gap-2">
-                  <span>{card.name || 'Tanpa Nama'}</span>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-white text-sm truncate">
+                    {card.name || 'Tanpa Nama'}
+                  </h3>
                   {isCompleted && (
-                    <span className="text-[10px] font-semibold bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30">
+                    <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/30">
                       Selesai
                     </span>
                   )}
-                </h3>
+                </div>
                 <p className="text-xs text-gray-400">
                   Target: <strong className="text-gray-200">{formatNumber(targetQty)} seeds</strong>
                   {card.defaultPrice > 0 && (
                     <span className="text-gray-400 ml-1.5">
-                      • Harga: {card.defaultPrice} {card.defaultPriceFormat === 'each' ? 'WL each' : '/ WL'}
+                      • {card.defaultPrice} {card.defaultPriceFormat === 'each' ? 'WL each' : '/ WL'}
                     </span>
                   )}
                 </p>
@@ -244,18 +238,18 @@ export default function TrackerCard({
                   setEditFormat(card.defaultPriceFormat || 'perWL');
                   setIsEditing(true);
                 }}
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-                title="Edit Target & Nama"
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/70 rounded-lg transition-colors"
+                title="Edit Target"
               >
-                <FiEdit2 className="w-4 h-4" />
+                <FiEdit2 className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => setShowDeleteCardConfirm(true)}
-                className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
-                title="Hapus Tracker"
+                className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                title="Hapus Target"
               >
-                <FiTrash2 className="w-4 h-4" />
+                <FiTrash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -263,105 +257,89 @@ export default function TrackerCard({
 
         {/* Progress Bar & Counter */}
         {!isEditing && (
-          <div className="mt-3.5 space-y-1.5">
+          <div className="mt-3 space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-300 font-medium">
-                Terkumpul: <strong className="text-green-400 text-sm">{formatNumber(totalQty)}</strong>
+              <span className="text-gray-300">
+                Terkumpul: <strong className="text-emerald-400">{formatNumber(totalQty)}</strong>
                 {targetQty > 0 && (
-                  <span className="text-gray-400 font-normal"> / {formatNumber(targetQty)} seeds</span>
+                  <span className="text-gray-400 font-normal"> / {formatNumber(targetQty)}</span>
                 )}
               </span>
-              <span className="font-bold text-white bg-gray-700/80 px-2 py-0.5 rounded text-[11px]">
+              <span className="font-bold text-white bg-gray-700 px-1.5 py-0.2 rounded text-[11px]">
                 {progressPercent}%
               </span>
             </div>
 
-            {/* Visual Bar */}
-            <div className="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-300 ${
-                  isCompleted ? 'bg-green-500 shadow-sm shadow-green-500/50' : 'bg-blue-500'
+                  isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-blue-500 to-emerald-500'
                 }`}
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
 
             <div className="flex items-center justify-between text-[11px] pt-0.5">
-              <span className={remaining > 0 ? 'text-yellow-400 font-medium' : 'text-green-400 font-semibold'}>
-                {remaining > 0 ? (
-                  `Kurang: ${formatNumber(remaining)} seeds lagi`
-                ) : (
-                  `🎉 Target tercapai! (+${formatNumber(totalQty - targetQty)} lebih)`
-                )}
+              <span className={remaining > 0 ? 'text-yellow-400 font-medium' : 'text-emerald-400 font-semibold'}>
+                {remaining > 0 ? `Kurang: ${formatNumber(remaining)} seeds` : '🎉 Target Terpenuhi!'}
               </span>
               <span className="text-gray-400">
-                Modal Keluar: <strong className="text-yellow-400">{fmtWL(totalCostWL)} WL</strong>
+                Modal: <strong className="text-yellow-400">{fmtWL(totalCostWL)} WL</strong>
               </span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Main Action Section: Quick Add Form */}
+      {/* Main Content: Add Purchase Form & Presets */}
       <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-        <form onSubmit={handleAddPurchase} className="space-y-2.5">
-          <p className="text-xs font-semibold text-gray-300 flex items-center justify-between">
-            <span>➕ Catat Pertambahan Beli</span>
-            <span className="text-[10px] text-gray-500 font-normal">Tekan Enter atau klik Tambah</span>
-          </p>
-
+        <form onSubmit={handleAddPurchase} className="space-y-2">
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
-            {/* Input Qty */}
             <div>
               <input
                 type="number"
                 value={inputQty}
                 onChange={(e) => setInputQty(e.target.value)}
-                placeholder="Jumlah dibeli (cth: 200)"
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
-                autoFocus={false}
+                placeholder="Jumlah dibeli"
+                className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder-gray-500"
               />
             </div>
 
-            {/* Input Price */}
             <div className="flex gap-1">
               <input
                 type="number"
                 value={inputPrice}
                 onChange={(e) => setInputPrice(e.target.value)}
                 placeholder="Harga"
-                className="w-20 px-2 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs text-center focus:outline-none focus:ring-2 focus:ring-green-500"
-                title="Harga beli batch ini"
+                className="w-20 px-2 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
               <select
                 value={inputFormat}
                 onChange={(e) => setInputFormat(e.target.value)}
-                className="px-1.5 py-2 bg-gray-700 border border-gray-600 rounded-lg text-xs text-white focus:outline-none"
+                className="px-1.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-xs text-white focus:outline-none"
               >
                 <option value="perWL">/ WL</option>
                 <option value="each">each</option>
               </select>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={!inputQty || parseInt(inputQty) <= 0}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-lg text-xs transition-colors flex items-center justify-center gap-1 shadow-sm"
             >
-              <FiPlus className="w-4 h-4" /> Tambah
+              <FiPlus className="w-3.5 h-3.5" /> Tambah
             </button>
           </div>
 
-          {/* Quick Buttons Presets */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <span className="text-[11px] text-gray-400 font-medium mr-1">Cepat:</span>
+          {/* Quick Preset Buttons */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
             {[50, 100, 200, 500, 1000].map((num) => (
               <button
                 key={num}
                 type="button"
                 onClick={() => handlePresetClick(num)}
-                className="px-2 py-1 bg-gray-700 hover:bg-gray-650 hover:text-white border border-gray-600 text-gray-300 rounded text-xs transition-colors font-medium active:scale-95"
+                className="px-2 py-0.5 bg-gray-700/70 hover:bg-gray-700 hover:text-white border border-gray-650 text-gray-300 rounded text-[11px] transition-colors font-medium active:scale-95"
               >
                 +{formatNumber(num)}
               </button>
@@ -370,8 +348,8 @@ export default function TrackerCard({
               <button
                 type="button"
                 onClick={() => handlePresetClick(remaining)}
-                className="px-2 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 rounded text-xs transition-colors font-semibold active:scale-95"
-                title="Isi dengan sisa kekurangan agar genap target"
+                className="px-2 py-0.5 bg-yellow-500/15 hover:bg-yellow-500/25 text-yellow-300 border border-yellow-500/30 rounded text-[11px] transition-colors font-semibold active:scale-95"
+                title="Isi kekurangan target"
               >
                 Sisa ({formatNumber(remaining)})
               </button>
@@ -379,12 +357,12 @@ export default function TrackerCard({
           </div>
         </form>
 
-        {/* Purchase History Log */}
-        <div className="pt-2 border-t border-gray-700/60 space-y-2">
+        {/* Purchase History */}
+        <div className="pt-2 border-t border-gray-700/70 space-y-2">
           <div className="flex items-center justify-between text-xs text-gray-400">
             <span className="font-semibold text-gray-300 flex items-center gap-1">
               <FiClock className="w-3.5 h-3.5 text-blue-400" />
-              Riwayat Pembelian ({purchases.length} transaksi)
+              Riwayat ({purchases.length})
             </span>
             {purchases.length > 0 && (
               <button
@@ -398,8 +376,8 @@ export default function TrackerCard({
           </div>
 
           {purchases.length === 0 ? (
-            <div className="p-3 bg-gray-750/30 rounded-lg text-center text-xs text-gray-500 border border-dashed border-gray-700">
-              Belum ada riwayat pembelian. Ketik jumlah atau klik tombol cepat di atas untuk mencatat.
+            <div className="p-2.5 bg-gray-750/30 rounded-lg text-center text-xs text-gray-500 border border-dashed border-gray-700">
+              Belum ada riwayat pembelian.
             </div>
           ) : (
             <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-gray-600">
@@ -409,14 +387,14 @@ export default function TrackerCard({
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-2 bg-gray-700/50 hover:bg-gray-700 rounded-lg text-xs border border-gray-650 transition-colors"
+                    className="flex items-center justify-between p-2 bg-gray-750/50 hover:bg-gray-750 rounded-lg text-xs border border-gray-700/60 transition-colors"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-[10px] text-gray-400 font-bold bg-gray-800 px-1.5 py-0.5 rounded">
                         #{originalIndex}
                       </span>
-                      <span className="font-bold text-green-400">
-                        +{formatNumber(item.qty)} seeds
+                      <span className="font-bold text-emerald-400">
+                        +{formatNumber(item.qty)}
                       </span>
                       {item.price > 0 && (
                         <span className="text-gray-400 text-[11px]">
@@ -436,7 +414,7 @@ export default function TrackerCard({
                         type="button"
                         onClick={() => setPurchaseToDelete({ item, originalIndex })}
                         className="p-1 text-gray-400 hover:text-red-400 rounded transition-colors"
-                        title="Hapus entri ini"
+                        title="Hapus entri"
                       >
                         <FiTrash2 className="w-3.5 h-3.5" />
                       </button>
@@ -448,8 +426,8 @@ export default function TrackerCard({
           )}
         </div>
 
-        {/* Footer: Send to Massing Planner Button */}
-        <div className="pt-2 border-t border-gray-700/60">
+        {/* Footer: Send to Massing Planner Button & Drawer */}
+        <div className="pt-2 border-t border-gray-700/70">
           {!showApplyMenu ? (
             <button
               type="button"
@@ -462,7 +440,7 @@ export default function TrackerCard({
               <span>➔ Kirim Hasil ke Massing Planner</span>
             </button>
           ) : (
-            <div className="p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl space-y-2.5 text-xs animate-fade-in">
+            <div className="p-3 bg-blue-500/10 border border-blue-500/25 rounded-xl space-y-2.5 text-xs animate-fade-in">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-blue-300 flex items-center gap-1.5">
                   <FiSend className="w-3.5 h-3.5" />
@@ -479,7 +457,7 @@ export default function TrackerCard({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] text-gray-400 mb-0.5">Pilih Step Tujuan:</label>
+                  <label className="block text-[10px] text-gray-400 mb-0.5">Pilih Step:</label>
                   <select
                     value={selectedStepIndex}
                     onChange={(e) => setSelectedStepIndex(parseInt(e.target.value) || 0)}
@@ -507,131 +485,90 @@ export default function TrackerCard({
                 </div>
               </div>
 
-              {/* Preview Pengelompokan Kategori Harga Otomatis */}
-              <div className="bg-gray-800/90 rounded-lg p-2 border border-gray-700/80 space-y-1.5">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-medium text-gray-300">
-                    Auto-Kategorisasi ({groupedPurchases.length} Kategori Harga):
-                  </span>
-                  <span className="text-[10px] text-gray-400">
-                    Total: <strong className="text-white">{formatNumber(totalQty)}</strong> seeds
-                  </span>
-                </div>
-
-                <div className="space-y-1 max-h-32 overflow-y-auto pr-0.5 scrollbar-thin scrollbar-thumb-gray-600">
-                  {groupedPurchases.map((g, idx) => {
-                    const batchCost = calculateCost(g.qty, g.price, g.priceFormat || 'perWL');
-                    return (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between text-xs bg-gray-750/90 px-2 py-1 rounded border border-gray-650/80"
-                      >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span
-                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                              idx === 0
-                                ? 'bg-blue-500/25 text-blue-300 border border-blue-500/40'
-                                : 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40'
-                            }`}
-                          >
-                            {idx === 0 ? 'Utama' : `Tambahan #${idx}`}
-                          </span>
-                          <span className="font-bold text-white">
-                            {formatNumber(g.qty)} seeds
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-[10px]">
-                          <span className="text-yellow-400 font-medium">
-                            @ {g.price} {g.priceFormat === 'each' ? 'WL each' : '/ WL'}
-                          </span>
-                          {g.count > 1 && (
-                            <span className="text-gray-300 text-[9px] bg-gray-700 px-1.5 py-0.5 rounded border border-gray-600">
-                              {g.count}x transaksi
-                            </span>
-                          )}
-                          {batchCost > 0 && (
-                            <span className="text-gray-400">
-                              ({fmtWL(batchCost)} WL)
-                            </span>
-                          )}
-                        </div>
+              {/* Grouped Batches Preview */}
+              {groupedPurchases.length > 0 && (
+                <div className="p-2 bg-gray-800/80 rounded-lg space-y-1 text-[11px] border border-gray-700">
+                  <span className="text-gray-400 block font-medium">Kategori Otomatis:</span>
+                  <div className="space-y-0.5">
+                    <div className="flex justify-between text-emerald-400">
+                      <span>• Utama ({groupedPurchases[0].count}x beli):</span>
+                      <span className="font-bold">
+                        {formatNumber(groupedPurchases[0].qty)} @ {groupedPurchases[0].price} {groupedPurchases[0].priceFormat === 'each' ? 'WL each' : '/WL'}
+                      </span>
+                    </div>
+                    {groupedPurchases.slice(1).map((g, gIdx) => (
+                      <div key={gIdx} className="flex justify-between text-yellow-400">
+                        <span>• Tambahan #{gIdx + 1} ({g.count}x beli):</span>
+                        <span className="font-bold">
+                          {formatNumber(g.qty)} @ {g.price} {g.priceFormat === 'each' ? 'WL each' : '/WL'}
+                        </span>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-[11px] text-gray-300">
-                  Total Biaya: <strong className="text-yellow-400">{fmtWL(totalCostWL)} WL</strong>
+                <span className="text-[11px] text-gray-400">
+                  Total: <strong className="text-white">{formatNumber(totalQty)} seeds</strong>
                 </span>
-                <div className="flex items-center gap-1.5">
-                  {applySuccess && onNavigateToPlanner && (
-                    <button
-                      type="button"
-                      onClick={onNavigateToPlanner}
-                      className="px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-blue-300 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
-                    >
-                      <span>Buka Planner ➔</span>
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleConfirmApply}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
-                  >
-                    {applySuccess ? <FiCheck className="w-3.5 h-3.5 text-green-300" /> : <FiSend className="w-3 h-3" />}
-                    <span>{applySuccess ? 'Tersalin!' : 'Konfirmasi Kirim'}</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleConfirmApply}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"
+                >
+                  <FiCheck className="w-3.5 h-3.5" />
+                  <span>{applySuccess ? 'Terkirim!' : 'Terapkan'}</span>
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Modal Konfirmasi Hapus 1 Transaksi Riwayat */}
-      <ConfirmModal
-        isOpen={Boolean(purchaseToDelete)}
-        onClose={() => setPurchaseToDelete(null)}
-        onConfirm={() => {
-          if (purchaseToDelete?.item) {
-            handleRemovePurchase(purchaseToDelete.item.id);
-            setPurchaseToDelete(null);
-          }
-        }}
-        title="Hapus Catatan Pembelian?"
-        message={`Apakah Anda yakin ingin menghapus transaksi #${purchaseToDelete?.originalIndex} (+${formatNumber(purchaseToDelete?.item?.qty || 0)} seeds @ ${purchaseToDelete?.item?.price || 0} ${purchaseToDelete?.item?.priceFormat === 'each' ? 'WL each' : '/ WL'}) dari riwayat?`}
-        confirmText="Ya, Hapus"
-        cancelText="Batal"
-      />
-
-      {/* Modal Konfirmasi Reset Semua Riwayat Pembelian */}
+      {/* Confirmation Modal for Resetting Purchase History */}
       <ConfirmModal
         isOpen={showResetConfirm}
         onClose={() => setShowResetConfirm(false)}
         onConfirm={handleClearPurchases}
-        title="Reset Riwayat Pembelian?"
-        message={`Apakah Anda yakin ingin mengosongkan semua riwayat pembelian untuk "${card.name}"? Total seed terkumpul (${formatNumber(totalQty)}) akan kembali ke 0.`}
-        confirmText="Ya, Reset Semua"
+        title={`Reset Riwayat ${card.name}?`}
+        message={`Apakah Anda yakin ingin menghapus seluruh ${purchases.length} riwayat pembelian untuk "${card.name}"? Total terkumpul akan kembali menjadi 0.`}
+        confirmText="Ya, Reset Riwayat"
         cancelText="Batal"
       />
 
-      {/* Modal Konfirmasi Hapus Tracker Belanja */}
+      {/* Confirmation Modal for Deleting Tracker Card */}
       <ConfirmModal
         isOpen={showDeleteCardConfirm}
         onClose={() => setShowDeleteCardConfirm(false)}
         onConfirm={() => {
-          setShowDeleteCardConfirm(false);
           onDelete(card.id);
+          setShowDeleteCardConfirm(false);
         }}
         title={`Hapus Tracker "${card.name}"?`}
-        message={`Apakah Anda yakin ingin menghapus target belanja untuk "${card.name}" beserta seluruh riwayat pembeliannya dari plan ini?`}
+        message={`Apakah Anda yakin ingin menghapus kartu target belanja "${card.name}"?`}
         confirmText="Ya, Hapus Tracker"
+        cancelText="Batal"
+      />
+
+      {/* Confirmation Modal for Deleting Individual Purchase */}
+      <ConfirmModal
+        isOpen={Boolean(purchaseToDelete)}
+        onClose={() => setPurchaseToDelete(null)}
+        onConfirm={() => {
+          if (purchaseToDelete) {
+            onUpdate({
+              ...card,
+              purchases: purchases.filter((p) => p.id !== purchaseToDelete.item.id),
+            });
+            setPurchaseToDelete(null);
+          }
+        }}
+        title="Hapus Catatan Pembelian?"
+        message={`Apakah Anda yakin ingin menghapus transaksi #${purchaseToDelete?.originalIndex} (+${formatNumber(purchaseToDelete?.item.qty || 0)} seeds @ ${purchaseToDelete?.item.price || 0} ${purchaseToDelete?.item.priceFormat === 'each' ? 'WL each' : '/WL'})?`}
+        confirmText="Ya, Hapus"
         cancelText="Batal"
       />
     </div>
   );
 }
-

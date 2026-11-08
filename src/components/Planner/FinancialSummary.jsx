@@ -1,5 +1,5 @@
-import { calculateStep, formatNumber, formatCurrency, formatTime, fmtWL, formatRupiah, calculateBEP, formatBEP } from '../../utils/calculations';
-import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiClock, FiZap, FiTarget } from 'react-icons/fi';
+import { calculateStep, formatNumber, formatCurrency, fmtWL, formatRupiah, calculateBEP, formatBEP } from '../../utils/calculations';
+import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiTarget, FiZap } from 'react-icons/fi';
 import { FaBalanceScale } from 'react-icons/fa';
 
 export default function FinancialSummary({ plan, onUpdatePlan }) {
@@ -41,7 +41,7 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
   const wlToIdrRate = plan.wlToIdrRate || 0;
   const cleanProfitRupiah = cleanProfitWL * wlToIdrRate;
 
-  // BEP (Break-Even Price) Calculations
+  // BEP Calculations
   const bepActive = calculateBEP(totalInvestmentWL, effectiveOutput, sellPriceFormat);
   const bepSeedPerWL = calculateBEP(totalInvestmentWL, finalSplicingSeeds, 'perWL');
   const bepSeedEach = calculateBEP(totalInvestmentWL, finalSplicingSeeds, 'each');
@@ -58,7 +58,7 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
       icon: FiDollarSign,
       color: 'text-red-400',
       bgColor: 'bg-red-500/10',
-      borderColor: 'border-red-500/30',
+      borderColor: 'border-red-500/25',
     },
     {
       label: 'Pendapatan',
@@ -67,140 +67,132 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
       icon: FiTarget,
       color: 'text-blue-400',
       bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/30',
+      borderColor: 'border-blue-500/25',
     },
     {
-      label: 'Clean Profit',
+      label: 'Net Profit',
       value: `${fmtWL(cleanProfitWL)} WL`,
       detail: wlToIdrRate > 0
         ? `≈ Rp ${formatRupiah(cleanProfitRupiah)}`
         : formatCurrency(cleanProfitWL),
       icon: cleanProfitWL >= 0 ? FiTrendingUp : FiTrendingDown,
-      color: cleanProfitWL >= 0 ? 'text-green-400' : 'text-red-400',
-      bgColor: cleanProfitWL >= 0 ? 'bg-green-500/10' : 'bg-red-500/10',
-      borderColor: cleanProfitWL >= 0 ? 'border-green-500/30' : 'border-red-500/30',
+      color: cleanProfitWL >= 0 ? 'text-emerald-400' : 'text-red-400',
+      bgColor: cleanProfitWL >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10',
+      borderColor: cleanProfitWL >= 0 ? 'border-emerald-500/25' : 'border-red-500/25',
     },
     {
       label: 'ROI',
       value: `${fmtWL(roi)}%`,
-      detail: roi >= 0 ? 'Menguntungkan' : 'Rugi',
+      detail: roi >= 0 ? 'Untung' : 'Rugi',
       icon: FiZap,
       color: roi >= 0 ? 'text-purple-400' : 'text-red-400',
       bgColor: roi >= 0 ? 'bg-purple-500/10' : 'bg-red-500/10',
-      borderColor: roi >= 0 ? 'border-purple-500/30' : 'border-red-500/30',
+      borderColor: roi >= 0 ? 'border-purple-500/25' : 'border-red-500/25',
     },
   ];
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold text-white flex items-center gap-2">
-        <FiTrendingUp className="text-green-400" />
-        Ringkasan Keuangan
-      </h2>
+      {/* Top Section Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-bold text-white flex items-center gap-2">
+          <FiTrendingUp className="text-emerald-400" />
+          Ringkasan Keuangan
+        </h2>
+        {totalInvestmentWL > 0 && (
+          <span className="text-xs text-gray-400">
+            Total {steps.length} Step
+          </span>
+        )}
+      </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* 4 Primary Metric Cards */}
+      <div className="grid grid-cols-2 gap-2.5">
         {cards.map((card) => (
-          <div key={card.label} className={`p-3.5 rounded-xl ${card.bgColor} border ${card.borderColor} flex flex-col justify-between`}>
+          <div
+            key={card.label}
+            className={`p-3 rounded-xl ${card.bgColor} border ${card.borderColor} flex flex-col justify-between`}
+          >
             <div>
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <card.icon className={`w-4 h-4 ${card.color} flex-shrink-0`} />
+              <div className="flex items-center gap-1.5 mb-1">
+                <card.icon className={`w-3.5 h-3.5 ${card.color} flex-shrink-0`} />
                 <span className="text-xs font-medium text-gray-400 truncate">{card.label}</span>
               </div>
-              <p className={`text-lg sm:text-xl font-bold ${card.color} tracking-tight truncate`}>
+              <p className={`text-base sm:text-lg font-bold ${card.color} tracking-tight truncate`}>
                 {card.value}
               </p>
             </div>
-            <p className="text-xs text-gray-500 mt-1 truncate">{card.detail}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5 truncate">{card.detail}</p>
           </div>
         ))}
       </div>
 
-      {/* Break-Even Price (BEP / Balik Modal) */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3.5 space-y-3">
+      {/* Break-Even Price (BEP) Card */}
+      <div className="bg-gray-800 border border-gray-700/80 rounded-2xl p-3.5 space-y-3 shadow-sm">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-white flex items-center gap-1.5">
-            <FaBalanceScale className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            Break-Even Price (BEP / Balik Modal)
+            <FaBalanceScale className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            Break-Even Price (BEP)
           </span>
           {sellPrice > 0 && totalInvestmentWL > 0 && effectiveOutput > 0 && (
             <span
               className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
                 cleanProfitWL > 0
-                  ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                   : cleanProfitWL < 0
                   ? 'bg-red-500/10 text-red-400 border-red-500/30'
-                  : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
               }`}
             >
-              {cleanProfitWL > 0 ? '✅ Di Atas BEP (Untung)' : cleanProfitWL < 0 ? '⚠️ Di Bawah BEP (Rugi)' : '⚖️ Tepat BEP'}
+              {cleanProfitWL > 0 ? 'Untung' : cleanProfitWL < 0 ? 'Rugi' : 'Balik Modal'}
             </span>
           )}
         </div>
 
         {totalInvestmentWL > 0 && effectiveOutput > 0 ? (
-          <div className="space-y-2.5">
-            {/* Box Utama BEP Aktif */}
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] text-amber-300 font-medium">
-                    Harga Balik Modal ({sellPriceFormat === 'perWL' ? 'qty / WL' : 'WL each'}):
-                  </p>
-                  <p className="text-xl font-bold text-amber-400 mt-0.5">
-                    {formatBEP(bepActive, sellPriceFormat)}
-                  </p>
-                </div>
-                {wlToIdrRate > 0 && (
-                  <div className="text-right">
-                    <p className="text-[10px] text-gray-400">Modal per Item (IDR)</p>
-                    <p className="text-xs font-bold text-white">
-                      Rp {parseFloat(((totalInvestmentWL * wlToIdrRate) / effectiveOutput).toFixed(2))}
-                    </p>
-                  </div>
-                )}
+          <div className="space-y-2">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl flex items-center justify-between">
+              <div>
+                <span className="text-[11px] text-amber-300 font-medium block">
+                  Harga Balik Modal ({sellPriceFormat === 'perWL' ? 'qty / WL' : 'WL each'}):
+                </span>
+                <p className="text-lg font-bold text-amber-400 mt-0.5">
+                  {formatBEP(bepActive, sellPriceFormat)}
+                </p>
               </div>
-              <p className="text-[11px] text-gray-300/90 mt-1.5 pt-1.5 border-t border-amber-500/20">
-                {sellPriceFormat === 'perWL' ? (
-                  <>
-                    Jual maksimal <strong className="text-white">{fmtWL(bepActive)} item/WL</strong> agar tidak rugi. Makin sedikit item/WL (misal {Math.max(1, Math.floor(bepActive * 0.8))}/WL) = <span className="text-green-400 font-semibold">Makin Untung</span>.
-                  </>
-                ) : (
-                  <>
-                    Jual minimal <strong className="text-white">{fmtWL(bepActive)} WL each</strong> agar tidak rugi. Makin tinggi harga (misal {fmtWL(bepActive * 1.2)} WL) = <span className="text-green-400 font-semibold">Makin Untung</span>.
-                  </>
-                )}
-              </p>
+              {wlToIdrRate > 0 && (
+                <div className="text-right">
+                  <span className="text-[10px] text-gray-400 block">Modal/Item (IDR)</span>
+                  <span className="text-xs font-bold text-white">
+                    Rp {parseFloat(((totalInvestmentWL * wlToIdrRate) / effectiveOutput).toFixed(2))}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Perbandingan Jual Seed vs Jual Block */}
+            {/* Comparison: Sell Seed vs Sell Block */}
             {(finalSplicingSeeds > 0 || estimatedHarvestBlocks > 0) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                 {finalSplicingSeeds > 0 && (
-                  <div className="p-2.5 bg-gray-700/40 border border-gray-650 rounded-lg">
-                    <div className="flex items-center justify-between text-gray-400 text-[11px] mb-1">
-                      <span>🌱 Jika Jual Seed</span>
-                      <span>{formatNumber(finalSplicingSeeds)} seeds</span>
-                    </div>
-                    <p className="text-sm font-bold text-green-400">
+                  <div className="p-2 bg-gray-750/70 border border-gray-700 rounded-lg">
+                    <span className="text-[10px] text-gray-400 block mb-0.5">Jual Seed:</span>
+                    <p className="font-bold text-emerald-400 text-xs">
                       {formatBEP(bepSeedPerWL, 'perWL')}
                     </p>
-                    <p className="text-[10px] text-gray-500">
-                      atau {formatBEP(bepSeedEach, 'each')}
-                    </p>
+                    <span className="text-[10px] text-gray-500">
+                      ({formatBEP(bepSeedEach, 'each')})
+                    </span>
                   </div>
                 )}
                 {estimatedHarvestBlocks > 0 && (
-                  <div className="p-2.5 bg-gray-700/40 border border-gray-650 rounded-lg">
-                    <div className="flex items-center justify-between text-gray-400 text-[11px] mb-1">
-                      <span>🌾 Jika Jual Block</span>
-                      <span>{formatNumber(estimatedHarvestBlocks)} blocks</span>
-                    </div>
-                    <p className="text-sm font-bold text-yellow-400">
+                  <div className="p-2 bg-gray-750/70 border border-gray-700 rounded-lg">
+                    <span className="text-[10px] text-gray-400 block mb-0.5">Jual Block:</span>
+                    <p className="font-bold text-yellow-400 text-xs">
                       {formatBEP(bepBlockPerWL, 'perWL')}
                     </p>
-                    <p className="text-[10px] text-gray-500">
-                      atau {formatBEP(bepBlockEach, 'each')}
-                    </p>
+                    <span className="text-[10px] text-gray-500">
+                      ({formatBEP(bepBlockEach, 'each')})
+                    </span>
                   </div>
                 )}
               </div>
@@ -208,65 +200,57 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
           </div>
         ) : (
           <p className="text-xs text-gray-500">
-            Masukkan modal dan jumlah pohon/seed untuk melihat harga balik modal (BEP).
+            Isi modal dan jumlah pohon/seed untuk kalkulasi BEP.
           </p>
         )}
       </div>
 
-      {/* Konversi ke Rupiah (IDR) */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3.5 space-y-2.5">
+      {/* IDR Conversion Card */}
+      <div className="bg-gray-800 border border-gray-700/80 rounded-2xl p-3.5 space-y-2.5 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-white">
             🇮🇩 Konversi ke Rupiah (IDR)
           </span>
           {wlToIdrRate > 0 && cleanProfitWL !== 0 && (
-            <span className={`text-xs font-bold ${cleanProfitWL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <span className={`text-xs font-bold ${cleanProfitWL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {cleanProfitWL >= 0 ? '+' : '-'}Rp {formatRupiah(Math.abs(cleanProfitRupiah))}
             </span>
           )}
         </div>
 
-        <div>
-          <label className="block text-[11px] font-medium text-gray-400 mb-1">
-            Harga 1 WL (Rupiah)
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold select-none">
-              Rp
-            </span>
-            <input
-              type="number"
-              value={plan.wlToIdrRate || ''}
-              onChange={(e) => onUpdatePlan && onUpdatePlan({ wlToIdrRate: parseFloat(e.target.value) || 0 })}
-              placeholder="Contoh: 850"
-              className="w-full pl-9 pr-14 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 select-none">
-              / WL
-            </span>
-          </div>
-          <p className="text-[10px] text-gray-500 mt-1">
-            Input manual harga 1 WL saat ini (misal: 800, 850, 1000)
-          </p>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold select-none">
+            Rp
+          </span>
+          <input
+            type="number"
+            value={plan.wlToIdrRate || ''}
+            onChange={(e) => onUpdatePlan && onUpdatePlan({ wlToIdrRate: parseFloat(e.target.value) || 0 })}
+            placeholder="850"
+            className="w-full pl-9 pr-14 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 select-none">
+            / WL
+          </span>
         </div>
 
         {wlToIdrRate > 0 && (
-          <div className="pt-2 border-t border-gray-700/60 space-y-1.5 text-xs">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-300 font-medium">Profit Bersih (IDR):</span>
-              <span className={`font-bold text-sm ${cleanProfitWL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <div className="pt-2 border-t border-gray-700/70 space-y-1 text-xs">
+            <div className="flex justify-between items-center text-gray-300">
+              <span>Profit Bersih:</span>
+              <span className={`font-bold ${cleanProfitWL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                 {cleanProfitWL >= 0 ? '+' : '-'}Rp {formatRupiah(Math.abs(cleanProfitRupiah))}
               </span>
             </div>
             {totalInvestmentWL > 0 && (
-              <div className="flex justify-between items-center text-gray-400">
-                <span>Total Modal (IDR):</span>
+              <div className="flex justify-between items-center text-gray-400 text-[11px]">
+                <span>Total Modal:</span>
                 <span>Rp {formatRupiah(totalInvestmentWL * wlToIdrRate)}</span>
               </div>
             )}
             {revenueWL > 0 && (
-              <div className="flex justify-between items-center text-gray-400">
-                <span>Pendapatan (IDR):</span>
+              <div className="flex justify-between items-center text-gray-400 text-[11px]">
+                <span>Pendapatan:</span>
                 <span>Rp {formatRupiah(revenueWL * wlToIdrRate)}</span>
               </div>
             )}
@@ -274,81 +258,34 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
         )}
       </div>
 
-      <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-300">Detail Biaya</h3>
+      {/* Detail Cost Breakdown Card */}
+      <div className="bg-gray-800 border border-gray-700/80 rounded-2xl p-3.5 space-y-2.5 shadow-sm">
+        <h3 className="text-xs font-semibold text-gray-300">Rincian Pengeluaran</h3>
 
-        {finalSplicingSeeds > 0 && (
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20 text-xs">
-              <span className="font-medium text-green-300 flex items-center gap-1.5">
-                🌱 Hasil Final Seed (After Break)
-              </span>
-              <span className="font-bold text-green-400">
-                {formatNumber(finalSplicingSeeds)} seeds
-              </span>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex justify-between items-center p-2 bg-gray-750/70 rounded-lg">
+            <span className="text-gray-400">Total Beli Seeds:</span>
+            <span className="font-semibold text-white">{fmtWL(totalSeedCostWL)} WL</span>
+          </div>
+
+          {totalFuelCostWL > 0 && (
+            <div className="flex justify-between items-center p-2 bg-gray-750/70 rounded-lg">
+              <span className="text-gray-400">Total Fuel Pack:</span>
+              <span className="font-semibold text-yellow-400">{fmtWL(totalFuelCostWL)} WL</span>
             </div>
-            {estimatedHarvestBlocks > 0 && (
-              <div className="flex justify-between items-center bg-yellow-500/10 px-3 py-2 rounded-lg border border-yellow-500/20 text-xs">
-                <span className="font-medium text-yellow-300 flex items-center gap-1.5">
-                  🌾 Estimasi Harvest Block (x{multiplier})
-                </span>
-                <span className="font-bold text-yellow-400">
-                  {formatNumber(estimatedHarvestBlocks)} blocks
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Biaya Seed 1 (semua step)</span>
-            <span className="text-white">{fmtWL(totalSeed1CostWL)} WL</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Biaya Seed 2 (semua step)</span>
-            <span className="text-white">{fmtWL(totalSeed2CostWL)} WL</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Biaya Fuel</span>
-            <span className="text-white">{fmtWL(totalFuelCostWL)} WL</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Modal Gems TM</span>
-            <span className="text-white">{fmtWL(totalTmGemsCostWL)} WL</span>
-          </div>
-          <hr className="border-gray-700" />
-          <div className="flex justify-between font-semibold">
-            <span className="text-gray-300">Total Modal</span>
+          {totalTmGemsCostWL > 0 && (
+            <div className="flex justify-between items-center p-2 bg-gray-750/70 rounded-lg">
+              <span className="text-gray-400">Total Gems TM ({formatNumber(totalTmGemsAmount)}):</span>
+              <span className="font-semibold text-cyan-400">{fmtWL(totalTmGemsCostWL)} WL</span>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center p-2 bg-gray-700/50 rounded-lg border border-gray-650 font-bold">
+            <span className="text-gray-200">Total Modal Keseluruhan:</span>
             <span className="text-red-400">{fmtWL(totalInvestmentWL)} WL</span>
           </div>
-          <hr className="border-gray-700" />
-          <div className="flex justify-between">
-            <span className="text-gray-400">Pendapatan Jual</span>
-            <span className="text-green-400">+{fmtWL(revenueWL)} WL</span>
-          </div>
-          <div className="flex justify-between font-semibold">
-            <span className="text-gray-300">Profit Bersih</span>
-            <div className="text-right">
-              <span className={cleanProfitWL >= 0 ? 'text-green-400' : 'text-red-400'}>
-                {cleanProfitWL >= 0 ? '+' : ''}{fmtWL(cleanProfitWL)} WL
-              </span>
-              {wlToIdrRate > 0 && (
-                <p className={`text-xs font-medium ${cleanProfitWL >= 0 ? 'text-green-400/80' : 'text-red-400/80'}`}>
-                  ≈ {cleanProfitWL >= 0 ? '+' : '-'}Rp {formatRupiah(Math.abs(cleanProfitRupiah))}
-                </p>
-              )}
-            </div>
-          </div>
-          {totalTmGemsAmount > 0 && (
-            <>
-              <hr className="border-gray-700" />
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Total Gems Dibeli</span>
-                <span className="text-yellow-400">{formatNumber(totalTmGemsAmount)} gems</span>
-              </div>
-            </>
-          )}
         </div>
       </div>
     </div>

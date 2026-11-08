@@ -98,7 +98,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
     setNewTargetQty('');
     setNewDefaultPrice('');
     setShowAddModal(false);
-    showNotification(`Target "${newTracker.name}" berhasil dibuat untuk ${currentPlan.name || 'plan ini'}!`);
+    showNotification(`Target "${newTracker.name}" berhasil dibuat!`);
   };
 
   // Update a tracker card
@@ -107,7 +107,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
     updateTrackers(updatedList);
   };
 
-  // Delete a tracker card (confirmation handled by TrackerCard modal)
+  // Delete a tracker card
   const handleDeleteTracker = (trackerId) => {
     const updatedList = trackers.filter((t) => t.id !== trackerId);
     updateTrackers(updatedList);
@@ -162,7 +162,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
     }
 
     updateTrackers([...trackers, ...created]);
-    showNotification(`Berhasil mengambil ${created.length} bahan dari plan "${currentPlan.name}"!`);
+    showNotification(`Berhasil memuat ${created.length} bahan dari plan!`);
   };
 
   // Apply tracked purchases to Massing Planner with auto-categorization by price
@@ -171,18 +171,18 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
 
     const newSteps = [...(currentPlan.steps || [])];
     if (!newSteps[stepIndex]) {
-      alert(`Step ${stepIndex + 1} tidak ditemukan di plan ini.`);
+      alert(`Step ${stepIndex + 1} tidak ditemukan.`);
       return;
     }
 
     const step = { ...newSteps[stepIndex] };
 
     if (!purchases || purchases.length === 0) {
-      alert('Belum ada pembelian yang dicatat pada tracker ini.');
+      alert('Belum ada riwayat pembelian untuk tracker ini.');
       return;
     }
 
-    // Kelompokkan transaksi dengan harga & format yang sama
+    // Group purchases by price & format
     let grouped = passedGrouped;
     if (!grouped || grouped.length === 0) {
       const groupsMap = new Map();
@@ -205,7 +205,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
 
     if (grouped.length === 0) return;
 
-    // Batch dengan qty terbanyak menjadi Pembelian Utama, sisanya masuk ke Tambahan Pembelian
+    // Highest qty batch is Primary, others are Extra batches
     const primaryBatch = grouped[0];
     const extraBatches = grouped.slice(1).map((g) => ({
       id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
@@ -228,7 +228,6 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
       step.seed2ExtraPurchases = extraBatches;
     }
 
-    // Jika seedsPlanted belum diset atau masih 0, update dengan total seed yang dibeli
     if (!step.seedsPlanted || parseInt(step.seedsPlanted) === 0) {
       step.seedsPlanted = totalQty;
     }
@@ -245,12 +244,8 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
       savePlan(updatedPlan);
     }
 
-    const detailMsg = extraBatches.length > 0
-      ? `${formatNumber(primaryBatch.qty)} seed (Utama @ ${primaryBatch.price} ${primaryBatch.priceFormat === 'each' ? 'WL each' : '/WL'}) + ${extraBatches.length} batch harga tambahan`
-      : `${formatNumber(primaryBatch.qty)} seed (Utama @ ${primaryBatch.price} ${primaryBatch.priceFormat === 'each' ? 'WL each' : '/WL'})`;
-
     showNotification(
-      `Berhasil mengelompokkan & mengirim ke Step ${stepIndex + 1} (${seedSlot === 'seed1' ? 'Seed 1' : 'Seed 2'}): ${detailMsg}!`
+      `Berhasil dikirim ke Step ${stepIndex + 1} (${seedSlot === 'seed1' ? 'Seed 1' : 'Seed 2'})!`
     );
   };
 
@@ -271,25 +266,24 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header Bar */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-4">
+      {/* Top Header Card */}
+      <div className="bg-gray-800 border border-gray-700/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <FiShoppingCart className="text-green-400 w-6 h-6" />
+              <FiShoppingCart className="text-emerald-400 w-5 h-5" />
               Tracker Pembelian Seed
             </h2>
 
-            {/* Plan Selector & Badge */}
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              <span className="text-xs text-gray-400">Terhubung ke Plan:</span>
+            {/* Plan Selector */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-gray-400">Terhubung:</span>
               <div className="flex items-center gap-1.5 bg-gray-750 px-2.5 py-1 rounded-lg border border-gray-650">
                 <FiFolder className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
                 <select
                   value={currentPlan?.id || ''}
                   onChange={(e) => handleSwitchPlan(e.target.value)}
                   className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1"
-                  title="Pilih plan massing untuk melihat tracker belanjanya"
                 >
                   {allPlanOptions.map((p) => (
                     <option key={p.id} value={p.id} className="bg-gray-800 text-white">
@@ -298,36 +292,37 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
                   ))}
                 </select>
               </div>
-              <span className="text-[11px] text-gray-400">
-                • {trackers.length} target belanja
+              <span className="text-xs text-gray-500">
+                • {trackers.length} target
               </span>
             </div>
           </div>
 
+          {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handleImportFromPlanner}
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
-              title={`Ambil bahan Seed 1 & Seed 2 dari plan "${currentPlan?.name || 'ini'}" otomatis`}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+              title="Ambil bahan Seed 1 & Seed 2 dari plan ini"
             >
-              <FiDownload className="w-4 h-4" />
-              <span>Import dari Plan Ini</span>
+              <FiDownload className="w-3.5 h-3.5" />
+              <span>Import dari Plan</span>
             </button>
             <button
               type="button"
               onClick={() => setShowAddModal(true)}
-              className="px-3.5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
             >
-              <FiPlus className="w-4 h-4" />
+              <FiPlus className="w-3.5 h-3.5" />
               <span>+ Tambah Target</span>
             </button>
             {trackers.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowClearAllConfirm(true)}
-                className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
-                title="Hapus semua tracker pada plan ini"
+                className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700/60 rounded-lg transition-colors"
+                title="Hapus semua target di plan ini"
               >
                 <FiTrash2 className="w-4 h-4" />
               </button>
@@ -337,18 +332,18 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
 
         {/* Global Notification Banner */}
         {notice && (
-          <div className="p-2.5 bg-green-500/10 border border-green-500/30 rounded-lg text-xs text-green-300 font-medium flex items-center justify-between gap-2 animate-fade-in">
+          <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 font-medium flex items-center justify-between gap-2 animate-fade-in">
             <div className="flex items-center gap-2">
-              <FiCheck className="w-4 h-4 text-green-400 flex-shrink-0" />
+              <FiCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>{notice}</span>
             </div>
             {onNavigateToPlanner && (
               <button
                 type="button"
                 onClick={onNavigateToPlanner}
-                className="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded font-bold text-xs transition-colors flex-shrink-0"
+                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs transition-colors flex-shrink-0"
               >
-                Lihat di Massing Planner ➔
+                Ke Massing Planner ➔
               </button>
             )}
           </div>
@@ -356,34 +351,24 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
 
         {/* Summary Metric Cards */}
         {trackers.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-gray-700/80">
-            <div className="p-3 bg-gray-750/70 rounded-xl border border-gray-700">
-              <span className="text-[11px] text-gray-400 block mb-0.5">Total Target Seed</span>
-              <span className="text-lg font-bold text-white">{formatNumber(totalAllTarget)}</span>
-              <span className="text-[10px] text-gray-500 block">seeds di plan ini</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-gray-700/70">
+            <div className="p-3 bg-gray-750/50 rounded-xl border border-gray-700/70">
+              <span className="text-[11px] text-gray-400 block mb-0.5">Total Target</span>
+              <span className="text-base sm:text-lg font-bold text-white">{formatNumber(totalAllTarget)}</span>
             </div>
-            <div className="p-3 bg-green-500/10 rounded-xl border border-green-500/30">
-              <span className="text-[11px] text-green-300 block mb-0.5">Sudah Terbeli</span>
-              <span className="text-lg font-bold text-green-400">{formatNumber(totalAllQty)}</span>
-              <span className="text-[10px] text-gray-400 block">
-                {totalAllTarget > 0 ? `${Math.min(100, Math.round((totalAllQty / totalAllTarget) * 100))}% tercapai` : 'seeds'}
-              </span>
+            <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/25">
+              <span className="text-[11px] text-emerald-300 block mb-0.5">Sudah Terbeli</span>
+              <span className="text-base sm:text-lg font-bold text-emerald-400">{formatNumber(totalAllQty)}</span>
             </div>
-            <div className="p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/30">
+            <div className="p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/25">
               <span className="text-[11px] text-yellow-300 block mb-0.5">Sisa Belum Terbeli</span>
-              <span className="text-lg font-bold text-yellow-400">
+              <span className="text-base sm:text-lg font-bold text-yellow-400">
                 {formatNumber(Math.max(0, totalAllTarget - totalAllQty))}
               </span>
-              <span className="text-[10px] text-gray-400 block">seeds lagi</span>
             </div>
-            <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/30">
+            <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/25">
               <span className="text-[11px] text-red-300 block mb-0.5">Total Modal Keluar</span>
-              <span className="text-lg font-bold text-red-400">{fmtWL(totalAllCostWL)} WL</span>
-              {wlRate > 0 && totalAllCostWL > 0 && (
-                <span className="text-[10px] text-gray-400 block">
-                  ≈ Rp {formatRupiah(totalAllCostWL * wlRate)}
-                </span>
-              )}
+              <span className="text-base sm:text-lg font-bold text-red-400">{fmtWL(totalAllCostWL)} WL</span>
             </div>
           </div>
         )}
@@ -391,37 +376,37 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
 
       {/* Grid of Tracker Cards */}
       {trackers.length === 0 ? (
-        <div className="p-12 bg-gray-800 border border-dashed border-gray-700 rounded-2xl text-center space-y-4">
-          <div className="w-16 h-16 bg-green-500/10 text-green-400 rounded-2xl flex items-center justify-center mx-auto text-2xl">
-            <FiShoppingCart className="w-8 h-8" />
+        <div className="p-12 bg-gray-800 border border-dashed border-gray-700/80 rounded-2xl text-center space-y-3">
+          <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center mx-auto text-xl">
+            <FiShoppingCart className="w-6 h-6" />
           </div>
           <div className="max-w-md mx-auto space-y-1">
-            <h3 className="text-base font-bold text-white">Belum Ada Target Belanja untuk Plan "{currentPlan?.name || 'Ini'}"</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Klik <strong>Import dari Plan Ini</strong> untuk langsung memuat bahan Seed 1 & Seed 2 dari plan ini, atau buat target belanja baru secara manual.
+            <h3 className="text-sm font-bold text-white">Belum Ada Target Belanja</h3>
+            <p className="text-xs text-gray-400">
+              Klik <strong>Import dari Plan</strong> untuk langsung memuat bahan dari plan, atau buat target manual.
             </p>
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-3 pt-2">
+          <div className="flex flex-wrap justify-center items-center gap-2 pt-2">
             <button
               type="button"
               onClick={handleImportFromPlanner}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shadow-sm"
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
             >
-              <FiDownload className="w-4 h-4" />
-              <span>Import dari Plan "{currentPlan?.name || 'Aktif'}"</span>
+              <FiDownload className="w-3.5 h-3.5" />
+              <span>Import dari Plan</span>
             </button>
             <button
               type="button"
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shadow-sm"
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
             >
-              <FiPlus className="w-4 h-4" />
-              <span>+ Buat Target Manual</span>
+              <FiPlus className="w-3.5 h-3.5" />
+              <span>+ Buat Manual</span>
             </button>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {trackers.map((tracker) => (
             <TrackerCard
               key={tracker.id}
@@ -438,67 +423,61 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
 
       {/* Modal: Add New Tracker */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
           <div className="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-2 border-b border-gray-700">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <FiPlus className="text-green-400" /> Tambah Target Belanja ({currentPlan?.name})
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <FiPlus className="text-emerald-400" /> Tambah Target Belanja
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
                 className="text-gray-400 hover:text-white"
               >
-                <FiX className="w-5 h-5" />
+                <FiX className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTracker} className="space-y-3.5">
+            <form onSubmit={handleCreateTracker} className="space-y-3 text-xs">
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">
-                  Nama Item / Seed <span className="text-red-400">*</span>
-                </label>
+                <label className="block font-medium text-gray-400 mb-1">Nama Item / Seed</label>
                 <ItemSearch
                   value={newItemName}
                   onChange={(item) => setNewItemName(item ? item.name : '')}
-                  placeholder="Cari seed (cth: Dreamstone Block Seed)..."
+                  placeholder="Cari item..."
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">
-                  Target Jumlah Beli (seeds) <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={newTargetQty}
-                  onChange={(e) => setNewTargetQty(e.target.value)}
-                  placeholder="Contoh: 2641"
-                  required
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">
-                  Harga Beli Estimasi / Bawaan (opsional)
-                </label>
-                <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-medium text-gray-400 mb-1">Target Beli</label>
                   <input
                     type="number"
-                    value={newDefaultPrice}
-                    onChange={(e) => setNewDefaultPrice(e.target.value)}
-                    placeholder="Contoh: 3"
-                    className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    value={newTargetQty}
+                    onChange={(e) => setNewTargetQty(e.target.value)}
+                    placeholder="2000"
+                    className="w-full px-2.5 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-emerald-500"
                   />
-                  <select
-                    value={newPriceFormat}
-                    onChange={(e) => setNewPriceFormat(e.target.value)}
-                    className="px-2 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none min-w-[100px]"
-                  >
-                    <option value="perWL">qty / WL</option>
-                    <option value="each">WL each</option>
-                  </select>
+                </div>
+                <div>
+                  <label className="block font-medium text-gray-400 mb-1">Harga Bawaan</label>
+                  <div className="flex gap-1">
+                    <input
+                      type="number"
+                      value={newDefaultPrice}
+                      onChange={(e) => setNewDefaultPrice(e.target.value)}
+                      placeholder="15"
+                      className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs"
+                    />
+                    <select
+                      value={newPriceFormat}
+                      onChange={(e) => setNewPriceFormat(e.target.value)}
+                      className="px-1.5 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-[11px] text-white"
+                    >
+                      <option value="perWL">/ WL</option>
+                      <option value="each">each</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -506,16 +485,16 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-650 text-gray-300 rounded-lg text-xs font-medium transition-colors"
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-650 text-gray-300 rounded-lg text-xs"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  disabled={!newItemName.trim() || !newTargetQty}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
+                  disabled={!newItemName.trim()}
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold"
                 >
-                  Simpan Target
+                  Tambah Target
                 </button>
               </div>
             </form>
@@ -523,13 +502,13 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
         </div>
       )}
 
-      {/* Modal Konfirmasi Hapus Semua Tracker Belanja */}
+      {/* Confirmation Modal for Clearing All Trackers */}
       <ConfirmModal
         isOpen={showClearAllConfirm}
         onClose={() => setShowClearAllConfirm(false)}
         onConfirm={handleClearAll}
         title="Hapus Semua Target Belanja?"
-        message={`Apakah Anda yakin ingin menghapus semua (${trackers.length}) target belanja dan riwayatnya pada plan "${currentPlan?.name || 'ini'}"?`}
+        message={`Apakah Anda yakin ingin menghapus semua target belanja untuk plan "${currentPlan?.name || 'ini'}"?`}
         confirmText="Ya, Hapus Semua"
         cancelText="Batal"
       />
