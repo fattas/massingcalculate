@@ -10,13 +10,119 @@
  */
 
 export const LANGUAGES = [
-  { code: 'id', name: 'Bahasa Indonesia', flag: '🇮🇩' },
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'fi', name: 'Suomi', flag: '🇫🇮' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { code: 'id', name: 'Bahasa Indonesia', flag: 'id' },
+  { code: 'en', name: 'English', flag: 'en' },
+  { code: 'fi', name: 'Suomi', flag: 'fi' },
+  { code: 'es', name: 'Español', flag: 'es' },
+  { code: 'tr', name: 'Türkçe', flag: 'tr' },
+  { code: 'ru', name: 'Русский', flag: 'ru' },
 ];
+
+export const CURRENCY_BY_LANG = {
+  id: {
+    code: 'IDR',
+    name: 'Rupiah (IDR)',
+    symbol: 'Rp',
+    flag: 'id',
+    defaultPlaceholder: '850',
+    decimals: 0,
+    locale: 'id-ID',
+    format: (val) => {
+      const rounded = Math.round(val);
+      const formatted = new Intl.NumberFormat('id-ID').format(Math.abs(rounded));
+      return rounded < 0 ? `-Rp ${formatted}` : `Rp ${formatted}`;
+    },
+    formatUnit: (val) => {
+      const formatted = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(val);
+      return `Rp ${formatted}`;
+    },
+  },
+  en: {
+    code: 'USD',
+    name: 'US Dollar (USD)',
+    symbol: '$',
+    flag: 'en',
+    defaultPlaceholder: '0.05',
+    decimals: 2,
+    locale: 'en-US',
+    format: (val) => {
+      const formatted = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(val));
+      return val < 0 ? `-$${formatted}` : `$${formatted}`;
+    },
+    formatUnit: (val) => {
+      const formatted = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
+      return `$${formatted}`;
+    },
+  },
+  fi: {
+    code: 'EUR',
+    name: 'Euro (EUR)',
+    symbol: '€',
+    flag: 'fi',
+    defaultPlaceholder: '0.05',
+    decimals: 2,
+    locale: 'fi-FI',
+    format: (val) => {
+      const formatted = new Intl.NumberFormat('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(val));
+      return val < 0 ? `-${formatted} €` : `${formatted} €`;
+    },
+    formatUnit: (val) => {
+      const formatted = new Intl.NumberFormat('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
+      return `${formatted} €`;
+    },
+  },
+  es: {
+    code: 'EUR',
+    name: 'Euro (EUR)',
+    symbol: '€',
+    flag: 'es',
+    defaultPlaceholder: '0.05',
+    decimals: 2,
+    locale: 'es-ES',
+    format: (val) => {
+      const formatted = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(val));
+      return val < 0 ? `-${formatted} €` : `${formatted} €`;
+    },
+    formatUnit: (val) => {
+      const formatted = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
+      return `${formatted} €`;
+    },
+  },
+  tr: {
+    code: 'TRY',
+    name: 'Türk Lirası (TRY)',
+    symbol: '₺',
+    flag: 'tr',
+    defaultPlaceholder: '1.8',
+    decimals: 2,
+    locale: 'tr-TR',
+    format: (val) => {
+      const formatted = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(val));
+      return val < 0 ? `-₺${formatted}` : `₺${formatted}`;
+    },
+    formatUnit: (val) => {
+      const formatted = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
+      return `₺${formatted}`;
+    },
+  },
+  ru: {
+    code: 'RUB',
+    name: 'Рубль (RUB)',
+    symbol: '₽',
+    flag: 'ru',
+    defaultPlaceholder: '4.5',
+    decimals: 2,
+    locale: 'ru-RU',
+    format: (val) => {
+      const formatted = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(val));
+      return val < 0 ? `-${formatted} ₽` : `${formatted} ₽`;
+    },
+    formatUnit: (val) => {
+      const formatted = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
+      return `${formatted} ₽`;
+    },
+  },
+};
 
 export const translations = {
   // =================== INDONESIAN ===================
@@ -116,15 +222,15 @@ export const translations = {
     roi_breakeven: 'Balik Modal',
     bep_title: 'Break-Even Price (BEP)',
     bep_price_label: 'Harga Balik Modal',
-    bep_cost_per_item: 'Modal/Item (IDR)',
+    bep_cost_per_item: 'Modal/Item ({currency})',
     bep_if_sell_seed: 'Jual Seed:',
     bep_if_sell_block: 'Jual Block:',
     bep_empty_hint: 'Isi modal dan jumlah pohon/seed untuk kalkulasi BEP.',
-    idr_conversion_title: '🇮🇩 Konversi ke Rupiah (IDR)',
-    idr_rate_label: 'Harga 1 WL (Rupiah)',
-    idr_profit_label: 'Profit Bersih:',
-    idr_modal_label: 'Total Modal:',
-    idr_revenue_label: 'Pendapatan:',
+    currency_conversion_title: 'Konversi ke {currency}',
+    currency_rate_label: 'Harga 1 WL ({currency})',
+    currency_profit_label: 'Profit Bersih:',
+    currency_modal_label: 'Total Modal:',
+    currency_revenue_label: 'Pendapatan:',
     cost_breakdown_title: 'Rincian Pengeluaran',
     cost_seeds: 'Total Beli Seeds:',
     cost_fuel: 'Total Fuel Pack:',
@@ -357,15 +463,15 @@ export const translations = {
     roi_breakeven: 'Break Even',
     bep_title: 'Break-Even Price (BEP)',
     bep_price_label: 'Break-Even Price',
-    bep_cost_per_item: 'Cost/Item (IDR)',
+    bep_cost_per_item: 'Cost/Item ({currency})',
     bep_if_sell_seed: 'If Selling Seeds:',
     bep_if_sell_block: 'If Selling Blocks:',
     bep_empty_hint: 'Enter investment and trees/seeds to calculate BEP.',
-    idr_conversion_title: '🇮🇩 Currency Conversion (IDR)',
-    idr_rate_label: '1 WL Price (IDR)',
-    idr_profit_label: 'Net Profit:',
-    idr_modal_label: 'Total Cost:',
-    idr_revenue_label: 'Revenue:',
+    currency_conversion_title: 'Currency Conversion ({currency})',
+    currency_rate_label: '1 WL Price ({currency})',
+    currency_profit_label: 'Net Profit:',
+    currency_modal_label: 'Total Cost:',
+    currency_revenue_label: 'Revenue:',
     cost_breakdown_title: 'Expense Breakdown',
     cost_seeds: 'Total Seeds Purchased:',
     cost_fuel: 'Total Fuel Packs:',
@@ -598,15 +704,15 @@ export const translations = {
     roi_breakeven: 'Omavaraisuus',
     bep_title: 'Omavaraisuushinta (BEP)',
     bep_price_label: 'Omavaraisuushinta',
-    bep_cost_per_item: 'Kustannus/kpl (IDR)',
+    bep_cost_per_item: 'Kustannus/kpl ({currency})',
     bep_if_sell_seed: 'Jos myyt siemeniä:',
     bep_if_sell_block: 'Jos myyt palikoita:',
     bep_empty_hint: 'Syötä kulut ja puut/siemenet BEP-laskentaan.',
-    idr_conversion_title: '🇮🇩 Valuuttamuunnos (IDR)',
-    idr_rate_label: '1 WL hinta (IDR)',
-    idr_profit_label: 'Puhdas voitto:',
-    idr_modal_label: 'Kokonaissijoitus:',
-    idr_revenue_label: 'Tuotto:',
+    currency_conversion_title: 'Valuuttamuunnos ({currency})',
+    currency_rate_label: '1 WL hinta ({currency})',
+    currency_profit_label: 'Puhdas voitto:',
+    currency_modal_label: 'Kokonaissijoitus:',
+    currency_revenue_label: 'Tuotto:',
     cost_breakdown_title: 'Kulukatsaus',
     cost_seeds: 'Siemenostokset yhteensä:',
     cost_fuel: 'Polttoaine yhteensä:',
@@ -839,15 +945,15 @@ export const translations = {
     roi_breakeven: 'Equilibrio',
     bep_title: 'Precio de Equilibrio (BEP)',
     bep_price_label: 'Precio para Recuperar Inversión',
-    bep_cost_per_item: 'Costo/Artículo (IDR)',
+    bep_cost_per_item: 'Costo/Artículo ({currency})',
     bep_if_sell_seed: 'Si vendes semillas:',
     bep_if_sell_block: 'Si vendes bloques:',
     bep_empty_hint: 'Ingresa inversión y árboles/semillas para calcular el BEP.',
-    idr_conversion_title: '🇮🇩 Conversión a Moneda (IDR)',
-    idr_rate_label: 'Precio de 1 WL (IDR)',
-    idr_profit_label: 'Ganancia Neta:',
-    idr_modal_label: 'Costo Total:',
-    idr_revenue_label: 'Ingresos:',
+    currency_conversion_title: 'Conversión de Moneda ({currency})',
+    currency_rate_label: 'Precio de 1 WL ({currency})',
+    currency_profit_label: 'Ganancia Neta:',
+    currency_modal_label: 'Costo Total:',
+    currency_revenue_label: 'Ingresos:',
     cost_breakdown_title: 'Desglose de Gastos',
     cost_seeds: 'Total Semillas Compradas:',
     cost_fuel: 'Total Fuel Packs:',
@@ -1080,15 +1186,15 @@ export const translations = {
     roi_breakeven: 'Başa Baş',
     bep_title: 'Başa Baş Fiyatı (BEP)',
     bep_price_label: 'Maliyet Çıkarma Fiyatı',
-    bep_cost_per_item: 'Maliyet/Adet (IDR)',
+    bep_cost_per_item: 'Maliyet/Adet ({currency})',
     bep_if_sell_seed: 'Tohum Satılırsa:',
     bep_if_sell_block: 'Blok Satılırsa:',
     bep_empty_hint: 'BEP hesabı için yatırım ve ağaç/tohum girin.',
-    idr_conversion_title: '🇮🇩 Para Birimi Dönüşümü (IDR)',
-    idr_rate_label: '1 WL Fiyatı (IDR)',
-    idr_profit_label: 'Net Kâr:',
-    idr_modal_label: 'Toplam Maliyet:',
-    idr_revenue_label: 'Gelir:',
+    currency_conversion_title: 'Para Birimi Dönüşümü ({currency})',
+    currency_rate_label: '1 WL Fiyatı ({currency})',
+    currency_profit_label: 'Net Kâr:',
+    currency_modal_label: 'Toplam Maliyet:',
+    currency_revenue_label: 'Gelir:',
     cost_breakdown_title: 'Harcama Dağılımı',
     cost_seeds: 'Toplam Tohum Alımı:',
     cost_fuel: 'Toplam Yakıt Paketi:',
@@ -1321,15 +1427,15 @@ export const translations = {
     roi_breakeven: 'В ноль',
     bep_title: 'Точка безубыточности (BEP)',
     bep_price_label: 'Цена безубыточности',
-    bep_cost_per_item: 'Себестоимость/шт (IDR)',
+    bep_cost_per_item: 'Себестоимость/шт ({currency})',
     bep_if_sell_seed: 'Если продавать семена:',
     bep_if_sell_block: 'Если продавать блоки:',
     bep_empty_hint: 'Введите затраты и деревья/семена для расчёта BEP.',
-    idr_conversion_title: '🇮🇩 Конвертация валюты (IDR)',
-    idr_rate_label: 'Цена 1 WL (IDR)',
-    idr_profit_label: 'Чистая прибыль:',
-    idr_modal_label: 'Общие затраты:',
-    idr_revenue_label: 'Выручка:',
+    currency_conversion_title: 'Конвертация валюты ({currency})',
+    currency_rate_label: 'Цена 1 WL ({currency})',
+    currency_profit_label: 'Чистая прибыль:',
+    currency_modal_label: 'Общие затраты:',
+    currency_revenue_label: 'Выручка:',
     cost_breakdown_title: 'Структура расходов',
     cost_seeds: 'Всего закупка семян:',
     cost_fuel: 'Всего закупка топлива:',

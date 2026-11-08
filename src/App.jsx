@@ -39,7 +39,7 @@ export default function App() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
                     activeTab === tab.id
                       ? 'bg-emerald-600 text-white shadow-sm'
                       : 'text-gray-400 hover:text-white hover:bg-gray-750'
@@ -51,25 +51,8 @@ export default function App() {
               ))}
             </div>
 
-            {/* Right section: Currency Legend & Language Switcher */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Currency Legend */}
-              <div className="hidden lg:flex items-center gap-3 text-xs text-gray-400">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-4 h-4 bg-yellow-500 rounded flex items-center justify-center text-[9px] font-bold text-black">W</span>
-                  <span>{t('currency_wl')}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center text-[9px] font-bold text-white">D</span>
-                  <span>{t('currency_dl')}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[9px] font-bold text-white">B</span>
-                  <span>{t('currency_bgl')}</span>
-                </div>
-              </div>
-
-              {/* Language Switcher */}
+            {/* Right section: Language Switcher with Flag */}
+            <div className="flex items-center">
               <LanguageSwitcher />
             </div>
           </div>

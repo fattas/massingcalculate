@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { LANGUAGES, translations } from './translations';
+import { LANGUAGES, CURRENCY_BY_LANG, translations } from './translations';
 
 const LanguageContext = createContext(null);
 
@@ -49,6 +49,9 @@ export function LanguageProvider({ children }) {
     return str;
   };
 
+  // Current active currency configuration based on language
+  const currentCurrency = CURRENCY_BY_LANG[language] || CURRENCY_BY_LANG['id'];
+
   // Format seconds into localized time string
   const formatTimeLocalized = (totalSeconds) => {
     if (!totalSeconds || totalSeconds <= 0) {
@@ -83,6 +86,7 @@ export function LanguageProvider({ children }) {
         formatNumberLocalized,
         LANGUAGES,
         currentLanguageObj: LANGUAGES.find((l) => l.code === language) || LANGUAGES[0],
+        currentCurrency,
       }}
     >
       {children}
@@ -97,3 +101,4 @@ export function useLanguage() {
   }
   return context;
 }
+

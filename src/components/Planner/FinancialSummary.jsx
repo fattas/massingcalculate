@@ -1,10 +1,11 @@
-import { calculateStep, formatCurrency, fmtWL, formatRupiah, calculateBEP, formatBEP } from '../../utils/calculations';
+import { calculateStep, formatCurrency, fmtWL, calculateBEP, formatBEP } from '../../utils/calculations';
 import { useLanguage } from '../../i18n/LanguageContext';
+import FlagIcon from '../Common/FlagIcon';
 import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiTarget, FiZap } from 'react-icons/fi';
 import { FaBalanceScale } from 'react-icons/fa';
 
 export default function FinancialSummary({ plan, onUpdatePlan }) {
-  const { t, formatNumberLocalized } = useLanguage();
+  const { t, formatNumberLocalized, currentCurrency } = useLanguage();
   const { steps = [], sellPrice, sellPriceFormat, totalFinalOutput } = plan;
 
   const stepResults = steps.map(s => calculateStep(s));
@@ -40,8 +41,30 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
 
   const cleanProfitWL = revenueWL - totalInvestmentWL;
   const roi = totalInvestmentWL > 0 ? (cleanProfitWL / totalInvestmentWL) * 100 : 0;
-  const wlToIdrRate = plan.wlToIdrRate || 0;
-  const cleanProfitRupiah = cleanProfitWL * wlToIdrRate;
+
+  // Active currency rate resolution (supports multi-currency with backward-compatible IDR fallback)
+  const activeCurrencyCode = currentCurrency?.code || 'IDR';
+  const activeRate = (plan.currencyRates && plan.currencyRates[activeCurrencyCode] !== undefined)
+    ? plan.currencyRates[activeCurrencyCode]
+    : (activeCurrencyCode === 'IDR' ? (plan.wlToIdrRate || 0) : 0);
+
+  const cleanProfitConverted = cleanProfitWL * activeRate;
+  const totalInvestmentConverted = totalInvestmentWL * activeRate;
+  const revenueConverted = revenueWL * activeRate;
+
+  const handleRateChange = (newVal) => {
+    const updatedRates = {
+      ...(plan.currencyRates || {}),
+      [activeCurrencyCode]: newVal,
+    };
+    const updates = { currencyRates: updatedRates };
+    if (activeCurrencyCode === 'IDR') {
+      updates.wlToIdrRate = newVal;
+    }
+    if (onUpdatePlan) {
+      onUpdatePlan(updates);
+    }
+  };
 
   // BEP Calculations
   const bepActive = calculateBEP(totalInvestmentWL, effectiveOutput, sellPriceFormat);
@@ -54,8 +77,8 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
     {
       label: t('card_modal'),
       value: `${fmtWL(totalInvestmentWL)} WL`,
-      detail: wlToIdrRate > 0 && totalInvestmentWL > 0
-        ? `Rp ${formatRupiah(totalInvestmentWL * wlToIdrRate)}`
+      detail: activeRate > 0 && totalInvestmentWL > 0
+        ? currentCurrency.format(totalInvestmentConverted)
         : formatCurrency(totalInvestmentWL),
       icon: FiDollarSign,
       color: 'text-red-400',
@@ -74,8 +97,8 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
     {
       label: t('card_profit'),
       value: `${fmtWL(cleanProfitWL)} WL`,
-      detail: wlToIdrRate > 0
-        ? `≈ Rp ${formatRupiah(cleanProfitRupiah)}`
+      detail: activeRate > 0
+        ? `≈ ${currentCurrency.format(cleanProfitConverted)}`
         : formatCurrency(cleanProfitWL),
       icon: cleanProfitWL >= 0 ? FiTrendingUp : FiTrendingDown,
       color: cleanProfitWL >= 0 ? 'text-emerald-400' : 'text-red-400',
@@ -162,11 +185,11 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
                   {formatBEP(bepActive, sellPriceFormat)}
                 </p>
               </div>
-              {wlToIdrRate > 0 && (
+              {activeRate > 0 && (
                 <div className="text-right">
-                  <span className="text-[10px] text-gray-400 block">{t('bep_cost_per_item')}</span>
+                  <span className="text-[10px] text-gray-400 block">{t('bep_cost_per_item', { currency: currentCurrency.code })}</span>
                   <span className="text-xs font-bold text-white">
-                    Rp {parseFloat(((totalInvestmentWL * wlToIdrRate) / effectiveOutput).toFixed(2))}
+                    {currentCurrency.formatUnit((totalInvestmentWL * activeRate) / effectiveOutput)}
                   </span>
                 </div>
               )}
@@ -207,28 +230,30 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
         )}
       </div>
 
-      {/* IDR Conversion Card */}
+      {/* Currency Conversion Card (Matches current language & country) */}
       <div className="bg-gray-800 border border-gray-700/80 rounded-2xl p-3.5 space-y-2.5 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-white">
-            {t('idr_conversion_title')}
+          <span className="text-xs font-semibold text-white flex items-center gap-2">
+            <FlagIcon code={currentCurrency.flag} className="w-4 h-3 rounded-sm shadow-sm" />
+            {t('currency_conversion_title', { currency: currentCurrency.name })}
           </span>
-          {wlToIdrRate > 0 && cleanProfitWL !== 0 && (
+          {activeRate > 0 && cleanProfitWL !== 0 && (
             <span className={`text-xs font-bold ${cleanProfitWL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {cleanProfitWL >= 0 ? '+' : '-'}Rp {formatRupiah(Math.abs(cleanProfitRupiah))}
+              {currentCurrency.format(cleanProfitConverted)}
             </span>
           )}
         </div>
 
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold select-none">
-            Rp
+            {currentCurrency.symbol}
           </span>
           <input
             type="number"
-            value={plan.wlToIdrRate || ''}
-            onChange={(e) => onUpdatePlan && onUpdatePlan({ wlToIdrRate: parseFloat(e.target.value) || 0 })}
-            placeholder="850"
+            step={currentCurrency.decimals > 0 ? "0.01" : "1"}
+            value={activeRate || ''}
+            onChange={(e) => handleRateChange(parseFloat(e.target.value) || 0)}
+            placeholder={currentCurrency.defaultPlaceholder}
             className="w-full pl-9 pr-14 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 select-none">
@@ -236,24 +261,24 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
           </span>
         </div>
 
-        {wlToIdrRate > 0 && (
+        {activeRate > 0 && (
           <div className="pt-2 border-t border-gray-700/70 space-y-1 text-xs">
             <div className="flex justify-between items-center text-gray-300">
-              <span>{t('idr_profit_label')}</span>
+              <span>{t('currency_profit_label')}</span>
               <span className={`font-bold ${cleanProfitWL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {cleanProfitWL >= 0 ? '+' : '-'}Rp {formatRupiah(Math.abs(cleanProfitRupiah))}
+                {currentCurrency.format(cleanProfitConverted)}
               </span>
             </div>
             {totalInvestmentWL > 0 && (
               <div className="flex justify-between items-center text-gray-400 text-[11px]">
-                <span>{t('idr_modal_label')}</span>
-                <span>Rp {formatRupiah(totalInvestmentWL * wlToIdrRate)}</span>
+                <span>{t('currency_modal_label')}</span>
+                <span>{currentCurrency.format(totalInvestmentConverted)}</span>
               </div>
             )}
             {revenueWL > 0 && (
               <div className="flex justify-between items-center text-gray-400 text-[11px]">
-                <span>{t('idr_revenue_label')}</span>
-                <span>Rp {formatRupiah(revenueWL * wlToIdrRate)}</span>
+                <span>{t('currency_revenue_label')}</span>
+                <span>{currentCurrency.format(revenueConverted)}</span>
               </div>
             )}
           </div>
