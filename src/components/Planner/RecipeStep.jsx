@@ -309,11 +309,18 @@ export default function RecipeStep({
               <div className="space-y-2">
                 <div>
                   <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 1</label>
-                  <ItemSearch
-                    value={step.seedName1}
-                    onChange={(item) => handleItemSelect('seedName1', item)}
-                    placeholder="Cari seed 1..."
-                  />
+                  <div className="flex items-center gap-2">
+                    {step.seedName1 && (
+                      <ItemIcon name={step.seedName1} size={38} className="rounded-lg shadow-sm shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <ItemSearch
+                        value={step.seedName1}
+                        onChange={(item) => handleItemSelect('seedName1', item)}
+                        placeholder="Cari seed 1..."
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Pembelian Utama */}
@@ -439,11 +446,18 @@ export default function RecipeStep({
               <div className="space-y-2">
                 <div>
                   <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 2</label>
-                  <ItemSearch
-                    value={step.seedName2}
-                    onChange={(item) => handleItemSelect('seedName2', item)}
-                    placeholder="Cari seed 2..."
-                  />
+                  <div className="flex items-center gap-2">
+                    {step.seedName2 && (
+                      <ItemIcon name={step.seedName2} size={38} className="rounded-lg shadow-sm shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <ItemSearch
+                        value={step.seedName2}
+                        onChange={(item) => handleItemSelect('seedName2', item)}
+                        placeholder="Cari seed 2..."
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Pembelian Utama */}

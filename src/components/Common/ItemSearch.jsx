@@ -1,55 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { searchItems } from '../../data/growtopiaItems';
-import { getItemImageURL } from '../../utils/wikiApi';
+import ItemIcon from './ItemIcon';
 import { FiSearch, FiX } from 'react-icons/fi';
-
-function ResultImage({ name, size = 32 }) {
-  const [url, setUrl] = useState(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setUrl(null);
-    setFailed(false);
-    if (!name) return;
-
-    getItemImageURL(name).then(u => {
-      if (cancelled) return;
-      if (u) setUrl(u);
-      else setFailed(true);
-    });
-
-    return () => { cancelled = true; };
-  }, [name]);
-
-  if (failed || !url) {
-    const letter = (name || '?')[0].toUpperCase();
-    const hue = name ? name.split('').reduce((h, c) => h + c.charCodeAt(0), 0) % 360 : 200;
-    return (
-      <div
-        className="rounded flex items-center justify-center"
-        style={{
-          width: size,
-          height: size,
-          backgroundColor: `hsl(${hue}, 40%, 25%)`,
-        }}
-      >
-        <span className="font-bold text-gray-300 text-xs">{letter}</span>
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={url}
-      alt={name}
-      className="object-contain rounded"
-      style={{ width: size, height: size }}
-      onError={() => setFailed(true)}
-      loading="lazy"
-    />
-  );
-}
 
 export default function ItemSearch({ value, onChange, placeholder = "Cari item...", className = "" }) {
   const [query, setQuery] = useState(value || '');
@@ -84,9 +36,9 @@ export default function ItemSearch({ value, onChange, placeholder = "Cari item..
     }
 
     setIsLoading(true);
-    debounceRef.current = setTimeout(async () => {
+    debounceRef.current = setTimeout(() => {
       try {
-        const items = await searchItems(val, 8);
+        const items = searchItems(val, 10);
         setResults(items);
         setIsOpen(true);
       } catch {
@@ -94,27 +46,33 @@ export default function ItemSearch({ value, onChange, placeholder = "Cari item..
       } finally {
         setIsLoading(false);
       }
-    }, 300);
+    }, 80);
   }, []);
 
   const handleSelect = (item) => {
     setQuery(item.name);
     setIsOpen(false);
-    onChange && onChange(item);
+    onChange(item);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (results.length > 0 && isOpen) {
+        handleSelect(results[0]);
+      } else if (query.trim()) {
+        handleSelect({ name: query.trim(), isManual: true });
+      }
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
   };
 
   const handleClear = () => {
     setQuery('');
     setResults([]);
     setIsOpen(false);
-    onChange && onChange(null);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && query.trim()) {
-      setIsOpen(false);
-      onChange && onChange({ name: query.trim() });
-    }
+    onChange(null);
   };
 
   return (
@@ -125,7 +83,10 @@ export default function ItemSearch({ value, onChange, placeholder = "Cari item..
           type="text"
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
-          onFocus={() => query.trim().length >= 2 && results.length > 0 && setIsOpen(true)}
+          onFocus={() => {
+            if (results.length > 0) setIsOpen(true);
+            else if (query.trim().length >= 2) handleSearch(query);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="w-full pl-10 pr-10 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
@@ -143,18 +104,22 @@ export default function ItemSearch({ value, onChange, placeholder = "Cari item..
       </div>
 
       {isOpen && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600">
           {results.map((item, idx) => (
             <button
               key={`${item.name}-${idx}`}
+              type="button"
               onClick={() => handleSelect(item)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-700 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-700/80 transition-colors text-left border-b border-gray-700/50 last:border-b-0"
             >
-              <div className="w-8 h-8 flex-shrink-0 overflow-hidden">
-                <ResultImage name={item.name} size={32} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-white truncate">{item.name}</div>
+              <ItemIcon name={item.name} explicitId={item.id} size={32} />
+              <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                <span className="text-sm text-white truncate font-medium">{item.name}</span>
+                {item.id !== undefined && (
+                  <span className="text-[10px] text-gray-400 font-mono bg-gray-900/80 px-1.5 py-0.5 rounded border border-gray-700/60 shrink-0">
+                    ID: {item.id}
+                  </span>
+                )}
               </div>
             </button>
           ))}
@@ -162,9 +127,9 @@ export default function ItemSearch({ value, onChange, placeholder = "Cari item..
       )}
 
       {isOpen && query.trim().length >= 2 && results.length === 0 && !isLoading && (
-        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-4">
+        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-xl shadow-xl p-4">
           <p className="text-sm text-gray-400 text-center">
-            Tidak ditemukan. Tekan <kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-xs">Enter</kbd> untuk input manual.
+            Tidak ditemukan di database. Tekan <kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-xs">Enter</kbd> untuk input manual.
           </p>
         </div>
       )}

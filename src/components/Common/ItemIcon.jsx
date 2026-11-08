@@ -1,52 +1,40 @@
-import { useState, useEffect } from 'react';
-import { getItemImageURL } from '../../utils/wikiApi';
+import { useState, useMemo } from 'react';
+import { getItemSpriteURL } from '../../data/growtopiaItems';
 
-export default function ItemIcon({ name, size = 32, className = "" }) {
-  const [imageUrl, setImageUrl] = useState(null);
-  const [loading, setLoading] = useState(false);
+export default function ItemIcon({ name, id: explicitId, size = 32, className = '' }) {
   const [failed, setFailed] = useState(false);
 
-  useEffect(() => {
-    if (!name) {
-      setImageUrl(null);
-      setFailed(false);
-      return;
+  // Synchronous resolution of CDN sprite URL
+  const spriteUrl = useMemo(() => {
+    if (explicitId !== undefined && explicitId !== null) {
+      return getItemSpriteURL(explicitId);
     }
+    if (!name) return null;
+    return getItemSpriteURL(name);
+  }, [name, explicitId]);
 
-    let cancelled = false;
-    setLoading(true);
-    setFailed(false);
-    setImageUrl(null);
+  if (!name && (explicitId === undefined || explicitId === null)) {
+    return null;
+  }
 
-    getItemImageURL(name).then(url => {
-      if (cancelled) return;
-      if (url) {
-        setImageUrl(url);
-      } else {
-        setFailed(true);
-      }
-      setLoading(false);
-    });
-
-    return () => { cancelled = true; };
-  }, [name]);
-
-  // Fallback: colored letter icon
-  if (!name || failed || (!imageUrl && !loading)) {
-    const letter = (name || '?')[0].toUpperCase();
-    const hue = name ? name.split('').reduce((h, c) => h + c.charCodeAt(0), 0) % 360 : 200;
+  // Fallback: colored letter icon if sprite resolution or loading failed
+  if (failed || !spriteUrl) {
+    const displayName = name || (explicitId !== undefined ? `ID ${explicitId}` : '?');
+    const letter = displayName[0].toUpperCase();
+    const hue = displayName.split('').reduce((h, c) => h + c.charCodeAt(0), 0) % 360;
     return (
       <div
-        className={`rounded flex items-center justify-center flex-shrink-0 ${className}`}
+        className={`rounded flex items-center justify-center flex-shrink-0 select-none ${className}`}
         style={{
           width: size,
           height: size,
           backgroundColor: `hsl(${hue}, 40%, 25%)`,
           border: `1px solid hsl(${hue}, 40%, 35%)`,
         }}
+        title={displayName}
       >
         <span
-          className="font-bold text-gray-300 select-none"
+          className="font-bold text-gray-300"
           style={{ fontSize: size * 0.45 }}
         >
           {letter}
@@ -55,26 +43,17 @@ export default function ItemIcon({ name, size = 32, className = "" }) {
     );
   }
 
-  // Loading state
-  if (loading && !imageUrl) {
-    return (
-      <div
-        className={`bg-gray-700 rounded flex items-center justify-center flex-shrink-0 animate-pulse ${className}`}
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-
   return (
     <div
-      className={`rounded flex items-center justify-center overflow-hidden flex-shrink-0 ${className}`}
-      style={{ width: size, height: size, backgroundColor: '#374151' }}
+      className={`rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 bg-black/40 border border-gray-700/60 p-0.5 shadow-sm ${className}`}
+      style={{ width: size, height: size }}
+      title={name || `Item #${explicitId}`}
     >
       <img
-        src={imageUrl}
-        alt={name}
-        className="object-contain"
-        style={{ width: size, height: size }}
+        src={spriteUrl}
+        alt={name || 'item'}
+        className="w-full h-full object-contain"
+        style={{ imageRendering: 'pixelated' }}
         onError={() => setFailed(true)}
         loading="lazy"
       />
