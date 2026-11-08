@@ -2,7 +2,8 @@ import { useState } from 'react';
 import ItemIcon from '../Common/ItemIcon';
 import ItemSearch from '../Common/ItemSearch';
 import ConfirmModal from '../Common/ConfirmModal';
-import { formatNumber, fmtWL, calculateCost } from '../../utils/calculations';
+import { fmtWL, calculateCost } from '../../utils/calculations';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { FiTrash2, FiPlus, FiEdit2, FiCheck, FiX, FiSend, FiClock } from 'react-icons/fi';
 
 export default function TrackerCard({
@@ -11,8 +12,8 @@ export default function TrackerCard({
   onDelete,
   onApplyToPlanner,
   plannerSteps = [],
-  onNavigateToPlanner,
 }) {
+  const { t, formatNumberLocalized } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(card.name);
   const [editTarget, setEditTarget] = useState(card.targetQty || 0);
@@ -73,7 +74,7 @@ export default function TrackerCard({
       qty,
       price,
       priceFormat: format,
-      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     onUpdate({
@@ -146,16 +147,16 @@ export default function TrackerCard({
         {isEditing ? (
           <div className="space-y-2.5">
             <div>
-              <label className="block text-[11px] font-medium text-gray-400 mb-1">Nama Item / Seed</label>
+              <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tracker_modal_item_label')}</label>
               <ItemSearch
                 value={editName}
                 onChange={(item) => setEditName(item ? item.name : '')}
-                placeholder="Cari item..."
+                placeholder={t('common_search')}
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[11px] font-medium text-gray-400 mb-1">Target Beli</label>
+                <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tracker_modal_target_label')}</label>
                 <input
                   type="number"
                   value={editTarget || ''}
@@ -165,7 +166,7 @@ export default function TrackerCard({
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-gray-400 mb-1">Harga Bawaan</label>
+                <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tracker_modal_default_price')}</label>
                 <div className="flex gap-1">
                   <input
                     type="number"
@@ -179,8 +180,8 @@ export default function TrackerCard({
                     onChange={(e) => setEditFormat(e.target.value)}
                     className="px-1.5 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-[11px] text-white"
                   >
-                    <option value="perWL">/ WL</option>
-                    <option value="each">each</option>
+                    <option value="perWL">{t('unit_per_wl')}</option>
+                    <option value="each">{t('unit_wl_each')}</option>
                   </select>
                 </div>
               </div>
@@ -191,14 +192,14 @@ export default function TrackerCard({
                 onClick={() => setIsEditing(false)}
                 className="px-2.5 py-1 bg-gray-700 text-gray-300 rounded text-xs flex items-center gap-1"
               >
-                <FiX className="w-3.5 h-3.5" /> Batal
+                <FiX className="w-3.5 h-3.5" /> {t('common_cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleSaveEdit}
                 className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold flex items-center gap-1"
               >
-                <FiCheck className="w-3.5 h-3.5" /> Simpan
+                <FiCheck className="w-3.5 h-3.5" /> {t('common_save')}
               </button>
             </div>
           </div>
@@ -209,19 +210,19 @@ export default function TrackerCard({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-white text-sm truncate">
-                    {card.name || 'Tanpa Nama'}
+                    {card.name || t('common_optional')}
                   </h3>
                   {isCompleted && (
                     <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/30">
-                      Selesai
+                      {t('common_done')}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-gray-400">
-                  Target: <strong className="text-gray-200">{formatNumber(targetQty)} seeds</strong>
+                  Target: <strong className="text-gray-200">{formatNumberLocalized(targetQty)} {t('common_seeds')}</strong>
                   {card.defaultPrice > 0 && (
                     <span className="text-gray-400 ml-1.5">
-                      • {card.defaultPrice} {card.defaultPriceFormat === 'each' ? 'WL each' : '/ WL'}
+                      • {card.defaultPrice} {card.defaultPriceFormat === 'each' ? t('unit_wl_each') : t('unit_per_wl')}
                     </span>
                   )}
                 </p>
@@ -239,7 +240,7 @@ export default function TrackerCard({
                   setIsEditing(true);
                 }}
                 className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/70 rounded-lg transition-colors"
-                title="Edit Target"
+                title={t('common_edit')}
               >
                 <FiEdit2 className="w-3.5 h-3.5" />
               </button>
@@ -247,7 +248,7 @@ export default function TrackerCard({
                 type="button"
                 onClick={() => setShowDeleteCardConfirm(true)}
                 className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                title="Hapus Target"
+                title={t('common_delete')}
               >
                 <FiTrash2 className="w-3.5 h-3.5" />
               </button>
@@ -260,9 +261,9 @@ export default function TrackerCard({
           <div className="mt-3 space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="text-gray-300">
-                Terkumpul: <strong className="text-emerald-400">{formatNumber(totalQty)}</strong>
+                {t('tracker_purchased')}: <strong className="text-emerald-400">{formatNumberLocalized(totalQty)}</strong>
                 {targetQty > 0 && (
-                  <span className="text-gray-400 font-normal"> / {formatNumber(targetQty)}</span>
+                  <span className="text-gray-400 font-normal"> / {formatNumberLocalized(targetQty)}</span>
                 )}
               </span>
               <span className="font-bold text-white bg-gray-700 px-1.5 py-0.2 rounded text-[11px]">
@@ -281,10 +282,10 @@ export default function TrackerCard({
 
             <div className="flex items-center justify-between text-[11px] pt-0.5">
               <span className={remaining > 0 ? 'text-yellow-400 font-medium' : 'text-emerald-400 font-semibold'}>
-                {remaining > 0 ? `Kurang: ${formatNumber(remaining)} seeds` : '🎉 Target Terpenuhi!'}
+                {remaining > 0 ? `${t('tracker_remaining_seeds')} ${formatNumberLocalized(remaining)} ${t('common_seeds')}` : t('tracker_target_reached')}
               </span>
               <span className="text-gray-400">
-                Modal: <strong className="text-yellow-400">{fmtWL(totalCostWL)} WL</strong>
+                {t('common_cost')}: <strong className="text-yellow-400">{fmtWL(totalCostWL)} WL</strong>
               </span>
             </div>
           </div>
@@ -300,7 +301,7 @@ export default function TrackerCard({
                 type="number"
                 value={inputQty}
                 onChange={(e) => setInputQty(e.target.value)}
-                placeholder="Jumlah dibeli"
+                placeholder={t('tracker_add_qty_placeholder')}
                 className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder-gray-500"
               />
             </div>
@@ -310,7 +311,7 @@ export default function TrackerCard({
                 type="number"
                 value={inputPrice}
                 onChange={(e) => setInputPrice(e.target.value)}
-                placeholder="Harga"
+                placeholder={t('common_price')}
                 className="w-20 px-2 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
               <select
@@ -318,8 +319,8 @@ export default function TrackerCard({
                 onChange={(e) => setInputFormat(e.target.value)}
                 className="px-1.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-xs text-white focus:outline-none"
               >
-                <option value="perWL">/ WL</option>
-                <option value="each">each</option>
+                <option value="perWL">{t('unit_per_wl')}</option>
+                <option value="each">{t('unit_wl_each')}</option>
               </select>
             </div>
 
@@ -328,7 +329,7 @@ export default function TrackerCard({
               disabled={!inputQty || parseInt(inputQty) <= 0}
               className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-lg text-xs transition-colors flex items-center justify-center gap-1 shadow-sm"
             >
-              <FiPlus className="w-3.5 h-3.5" /> Tambah
+              <FiPlus className="w-3.5 h-3.5" /> {t('common_add')}
             </button>
           </div>
 
@@ -339,9 +340,9 @@ export default function TrackerCard({
                 key={num}
                 type="button"
                 onClick={() => handlePresetClick(num)}
-                className="px-2 py-0.5 bg-gray-700/70 hover:bg-gray-700 hover:text-white border border-gray-650 text-gray-300 rounded text-[11px] transition-colors font-medium active:scale-95"
+                className="px-2 py-0.5 bg-gray-700/70 hover:bg-gray-700 hover:text-white border border-gray-655 text-gray-300 rounded text-[11px] transition-colors font-medium active:scale-95"
               >
-                +{formatNumber(num)}
+                +{formatNumberLocalized(num)}
               </button>
             ))}
             {remaining > 0 && remaining !== 50 && remaining !== 100 && remaining !== 200 && remaining !== 500 && (
@@ -349,9 +350,9 @@ export default function TrackerCard({
                 type="button"
                 onClick={() => handlePresetClick(remaining)}
                 className="px-2 py-0.5 bg-yellow-500/15 hover:bg-yellow-500/25 text-yellow-300 border border-yellow-500/30 rounded text-[11px] transition-colors font-semibold active:scale-95"
-                title="Isi kekurangan target"
+                title={t('tracker_remaining')}
               >
-                Sisa ({formatNumber(remaining)})
+                {t('tracker_remaining')} ({formatNumberLocalized(remaining)})
               </button>
             )}
           </div>
@@ -362,7 +363,7 @@ export default function TrackerCard({
           <div className="flex items-center justify-between text-xs text-gray-400">
             <span className="font-semibold text-gray-300 flex items-center gap-1">
               <FiClock className="w-3.5 h-3.5 text-blue-400" />
-              Riwayat ({purchases.length})
+              {t('tracker_history_title')} ({purchases.length})
             </span>
             {purchases.length > 0 && (
               <button
@@ -370,14 +371,14 @@ export default function TrackerCard({
                 onClick={() => setShowResetConfirm(true)}
                 className="text-[11px] text-red-400 hover:underline"
               >
-                Reset Riwayat
+                {t('tracker_reset_history')}
               </button>
             )}
           </div>
 
           {purchases.length === 0 ? (
             <div className="p-2.5 bg-gray-750/30 rounded-lg text-center text-xs text-gray-500 border border-dashed border-gray-700">
-              Belum ada riwayat pembelian.
+              {t('tracker_no_history')}
             </div>
           ) : (
             <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-gray-600">
@@ -394,11 +395,11 @@ export default function TrackerCard({
                         #{originalIndex}
                       </span>
                       <span className="font-bold text-emerald-400">
-                        +{formatNumber(item.qty)}
+                        +{formatNumberLocalized(item.qty)}
                       </span>
                       {item.price > 0 && (
                         <span className="text-gray-400 text-[11px]">
-                          @ {item.price} {item.priceFormat === 'each' ? 'WL each' : '/WL'}
+                          @ {item.price} {item.priceFormat === 'each' ? t('unit_wl_each') : t('unit_per_wl')}
                         </span>
                       )}
                       {cost > 0 && (
@@ -414,7 +415,7 @@ export default function TrackerCard({
                         type="button"
                         onClick={() => setPurchaseToDelete({ item, originalIndex })}
                         className="p-1 text-gray-400 hover:text-red-400 rounded transition-colors"
-                        title="Hapus entri"
+                        title={t('common_delete')}
                       >
                         <FiTrash2 className="w-3.5 h-3.5" />
                       </button>
@@ -434,17 +435,17 @@ export default function TrackerCard({
               onClick={() => setShowApplyMenu(true)}
               disabled={totalQty === 0}
               className="w-full py-2 px-3 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Kirim total seed dan batch belanja ini ke Massing Planner"
+              title={t('tracker_send_to_planner')}
             >
               <FiSend className="w-3.5 h-3.5 text-blue-400" />
-              <span>➔ Kirim Hasil ke Massing Planner</span>
+              <span>{t('tracker_send_to_planner')}</span>
             </button>
           ) : (
             <div className="p-3 bg-blue-500/10 border border-blue-500/25 rounded-xl space-y-2.5 text-xs animate-fade-in">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-blue-300 flex items-center gap-1.5">
                   <FiSend className="w-3.5 h-3.5" />
-                  Kirim ke Massing Planner
+                  {t('tracker_send_modal_title')}
                 </span>
                 <button
                   type="button"
@@ -457,7 +458,7 @@ export default function TrackerCard({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] text-gray-400 mb-0.5">Pilih Step:</label>
+                  <label className="block text-[10px] text-gray-400 mb-0.5">{t('tracker_select_step')}</label>
                   <select
                     value={selectedStepIndex}
                     onChange={(e) => setSelectedStepIndex(parseInt(e.target.value) || 0)}
@@ -466,21 +467,21 @@ export default function TrackerCard({
                     {(plannerSteps.length > 0 ? plannerSteps : [{ id: 'default', name: 'Step 1' }]).map(
                       (s, idx) => (
                         <option key={s.id || idx} value={idx}>
-                          Step {idx + 1} {s.name ? `(${s.name})` : ''}
+                          {t('common_step')} {idx + 1} {s.name ? `(${s.name})` : ''}
                         </option>
                       )
                     )}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] text-gray-400 mb-0.5">Posisi Seed:</label>
+                  <label className="block text-[10px] text-gray-400 mb-0.5">{t('tracker_seed_position')}</label>
                   <select
                     value={selectedSeedSlot}
                     onChange={(e) => setSelectedSeedSlot(e.target.value)}
                     className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-xs text-white"
                   >
-                    <option value="seed1">Seed / Bahan 1</option>
-                    <option value="seed2">Seed / Bahan 2</option>
+                    <option value="seed1">{t('seed_1_label')}</option>
+                    <option value="seed2">{t('seed_2_label')}</option>
                   </select>
                 </div>
               </div>
@@ -488,19 +489,19 @@ export default function TrackerCard({
               {/* Grouped Batches Preview */}
               {groupedPurchases.length > 0 && (
                 <div className="p-2 bg-gray-800/80 rounded-lg space-y-1 text-[11px] border border-gray-700">
-                  <span className="text-gray-400 block font-medium">Kategori Otomatis:</span>
+                  <span className="text-gray-400 block font-medium">{t('tracker_auto_category')}</span>
                   <div className="space-y-0.5">
                     <div className="flex justify-between text-emerald-400">
-                      <span>• Utama ({groupedPurchases[0].count}x beli):</span>
+                      <span>• {t('tracker_primary_batch')} ({groupedPurchases[0].count} {t('tracker_times_bought')}):</span>
                       <span className="font-bold">
-                        {formatNumber(groupedPurchases[0].qty)} @ {groupedPurchases[0].price} {groupedPurchases[0].priceFormat === 'each' ? 'WL each' : '/WL'}
+                        {formatNumberLocalized(groupedPurchases[0].qty)} @ {groupedPurchases[0].price} {groupedPurchases[0].priceFormat === 'each' ? t('unit_wl_each') : t('unit_per_wl')}
                       </span>
                     </div>
                     {groupedPurchases.slice(1).map((g, gIdx) => (
                       <div key={gIdx} className="flex justify-between text-yellow-400">
-                        <span>• Tambahan #{gIdx + 1} ({g.count}x beli):</span>
+                        <span>• {t('tracker_extra_batch')} #{gIdx + 1} ({g.count} {t('tracker_times_bought')}):</span>
                         <span className="font-bold">
-                          {formatNumber(g.qty)} @ {g.price} {g.priceFormat === 'each' ? 'WL each' : '/WL'}
+                          {formatNumberLocalized(g.qty)} @ {g.price} {g.priceFormat === 'each' ? t('unit_wl_each') : t('unit_per_wl')}
                         </span>
                       </div>
                     ))}
@@ -510,7 +511,7 @@ export default function TrackerCard({
 
               <div className="flex items-center justify-between pt-1">
                 <span className="text-[11px] text-gray-400">
-                  Total: <strong className="text-white">{formatNumber(totalQty)} seeds</strong>
+                  {t('common_total')}: <strong className="text-white">{formatNumberLocalized(totalQty)} {t('common_seeds')}</strong>
                 </span>
                 <button
                   type="button"
@@ -518,7 +519,7 @@ export default function TrackerCard({
                   className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"
                 >
                   <FiCheck className="w-3.5 h-3.5" />
-                  <span>{applySuccess ? 'Terkirim!' : 'Terapkan'}</span>
+                  <span>{applySuccess ? t('common_applied') : t('common_apply')}</span>
                 </button>
               </div>
             </div>
@@ -531,10 +532,10 @@ export default function TrackerCard({
         isOpen={showResetConfirm}
         onClose={() => setShowResetConfirm(false)}
         onConfirm={handleClearPurchases}
-        title={`Reset Riwayat ${card.name}?`}
-        message={`Apakah Anda yakin ingin menghapus seluruh ${purchases.length} riwayat pembelian untuk "${card.name}"? Total terkumpul akan kembali menjadi 0.`}
-        confirmText="Ya, Reset Riwayat"
-        cancelText="Batal"
+        title={`${t('confirm_reset_history_title')} (${card.name})`}
+        message={t('confirm_reset_history_msg')}
+        confirmText={t('common_yes_delete')}
+        cancelText={t('common_cancel')}
       />
 
       {/* Confirmation Modal for Deleting Tracker Card */}
@@ -545,10 +546,10 @@ export default function TrackerCard({
           onDelete(card.id);
           setShowDeleteCardConfirm(false);
         }}
-        title={`Hapus Tracker "${card.name}"?`}
-        message={`Apakah Anda yakin ingin menghapus kartu target belanja "${card.name}"?`}
-        confirmText="Ya, Hapus Tracker"
-        cancelText="Batal"
+        title={`${t('confirm_delete_tracker_title')} ("${card.name}")`}
+        message={t('confirm_delete_tracker_msg')}
+        confirmText={t('common_yes_delete')}
+        cancelText={t('common_cancel')}
       />
 
       {/* Confirmation Modal for Deleting Individual Purchase */}
@@ -564,10 +565,10 @@ export default function TrackerCard({
             setPurchaseToDelete(null);
           }
         }}
-        title="Hapus Catatan Pembelian?"
-        message={`Apakah Anda yakin ingin menghapus transaksi #${purchaseToDelete?.originalIndex} (+${formatNumber(purchaseToDelete?.item.qty || 0)} seeds @ ${purchaseToDelete?.item.price || 0} ${purchaseToDelete?.item.priceFormat === 'each' ? 'WL each' : '/WL'})?`}
-        confirmText="Ya, Hapus"
-        cancelText="Batal"
+        title={t('confirm_delete_batch_title')}
+        message={`${t('confirm_delete_batch_msg')} #${purchaseToDelete?.originalIndex} (+${formatNumberLocalized(purchaseToDelete?.item.qty || 0)} seeds @ ${purchaseToDelete?.item.price || 0} ${purchaseToDelete?.item.priceFormat === 'each' ? 'WL each' : '/WL'})?`}
+        confirmText={t('common_yes_delete')}
+        cancelText={t('common_cancel')}
       />
     </div>
   );

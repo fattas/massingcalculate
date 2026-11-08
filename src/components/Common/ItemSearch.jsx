@@ -1,9 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { searchItems } from '../../data/growtopiaItems';
 import ItemIcon from './ItemIcon';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { FiSearch, FiX } from 'react-icons/fi';
 
-export default function ItemSearch({ value, onChange, placeholder = "Cari item...", className = "" }) {
+export default function ItemSearch({ value, onChange, placeholder, className = "" }) {
+  const { t } = useLanguage();
+  const searchPlaceholder = placeholder || t('common_search');
+
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -88,12 +92,12 @@ export default function ItemSearch({ value, onChange, placeholder = "Cari item..
             else if (query.trim().length >= 2) handleSearch(query);
           }}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="w-full pl-10 pr-10 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+          placeholder={searchPlaceholder}
+          className="w-full pl-10 pr-10 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
         />
         {isLoading && (
           <div className="absolute right-10 top-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 border-2 border-gray-500 border-t-green-400 rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-gray-500 border-t-emerald-400 rounded-full animate-spin"></div>
           </div>
         )}
         {query && (
@@ -104,33 +108,22 @@ export default function ItemSearch({ value, onChange, placeholder = "Cari item..
       </div>
 
       {isOpen && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600">
-          {results.map((item, idx) => (
-            <button
-              key={`${item.name}-${idx}`}
-              type="button"
+        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+          {results.map((item) => (
+            <div
+              key={item.id}
               onClick={() => handleSelect(item)}
-              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-700/80 transition-colors text-left border-b border-gray-700/50 last:border-b-0"
+              className="flex items-center gap-3 px-3 py-2 hover:bg-gray-700 cursor-pointer transition-colors"
             >
-              <ItemIcon name={item.name} explicitId={item.id} size={32} />
-              <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                <span className="text-sm text-white truncate font-medium">{item.name}</span>
-                {item.id !== undefined && (
-                  <span className="text-[10px] text-gray-400 font-mono bg-gray-900/80 px-1.5 py-0.5 rounded border border-gray-700/60 shrink-0">
-                    ID: {item.id}
-                  </span>
-                )}
+              <ItemIcon name={item.name} size={32} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white font-medium truncate">{item.name}</p>
+                <p className="text-xs text-gray-400">
+                  Rarity: {item.rarity || '?'} {item.hitsToBreak ? `• ${item.hitsToBreak} hits` : ''}
+                </p>
               </div>
-            </button>
+            </div>
           ))}
-        </div>
-      )}
-
-      {isOpen && query.trim().length >= 2 && results.length === 0 && !isLoading && (
-        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-xl shadow-xl p-4">
-          <p className="text-sm text-gray-400 text-center">
-            Tidak ditemukan di database. Tekan <kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-xs">Enter</kbd> untuk input manual.
-          </p>
         </div>
       )}
     </div>

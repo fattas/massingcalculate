@@ -1,16 +1,23 @@
 import { useEffect } from 'react';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { FiAlertTriangle, FiTrash2, FiX } from 'react-icons/fi';
 
 export default function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Konfirmasi Hapus',
-  message = 'Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.',
-  confirmText = 'Ya, Hapus',
-  cancelText = 'Batal',
+  title,
+  message,
+  confirmText,
+  cancelText,
   type = 'danger', // 'danger' | 'warning' | 'info'
 }) {
+  const { t } = useLanguage();
+
+  const finalTitle = title || t('common_confirm');
+  const finalConfirmText = confirmText || t('common_yes_delete');
+  const finalCancelText = cancelText || t('common_cancel');
+
   // Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
@@ -43,7 +50,7 @@ export default function ConfirmModal({
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-700/60 transition-colors"
-          title="Tutup"
+          title={t('common_close')}
         >
           <FiX className="w-5 h-5" />
         </button>
@@ -65,7 +72,7 @@ export default function ConfirmModal({
           </div>
           <div>
             <h3 className="text-base font-bold text-white leading-snug">
-              {title}
+              {finalTitle}
             </h3>
             <div className="text-xs text-gray-400 mt-1 leading-relaxed">
               {typeof message === 'string' ? <p>{message}</p> : message}
@@ -80,7 +87,7 @@ export default function ConfirmModal({
             onClick={onClose}
             className="px-4 py-2 bg-gray-700 hover:bg-gray-650 text-gray-300 rounded-xl text-xs font-semibold transition-colors"
           >
-            {cancelText}
+            {finalCancelText}
           </button>
           <button
             type="button"
@@ -95,11 +102,10 @@ export default function ConfirmModal({
             }`}
           >
             <FiTrash2 className="w-3.5 h-3.5" />
-            <span>{confirmText}</span>
+            <span>{finalConfirmText}</span>
           </button>
         </div>
       </div>
     </div>
   );
 }
-

@@ -4,10 +4,12 @@ import ItemSearch from '../Common/ItemSearch';
 import ConfirmModal from '../Common/ConfirmModal';
 import { useLocalStorage, useSavedPlans } from '../../hooks/useLocalStorage';
 import { createDefaultPlan } from '../../data/growtopiaItems';
-import { formatNumber, fmtWL, formatRupiah, calculateCost } from '../../utils/calculations';
+import { fmtWL, calculateCost } from '../../utils/calculations';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { FiShoppingCart, FiPlus, FiDownload, FiTrash2, FiCheck, FiX, FiFolder } from 'react-icons/fi';
 
 export default function SeedShoppingTracker({ onNavigateToPlanner }) {
+  const { t, formatNumberLocalized } = useLanguage();
   const [currentPlan, setCurrentPlan] = useLocalStorage('gt-current-plan', createDefaultPlan());
   const { plans: savedPlans, savePlan } = useSavedPlans();
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
@@ -43,7 +45,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
     const target = allPlanOptions.find((p) => p.id === planId);
     if (target) {
       setCurrentPlan(target);
-      showNotification(`Beralih ke plan "${target.name || 'Untitled Plan'}"`);
+      showNotification(`${t('tracker_connected_plan')} "${target.name || 'Untitled Plan'}"`);
     }
   };
 
@@ -98,7 +100,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
     setNewTargetQty('');
     setNewDefaultPrice('');
     setShowAddModal(false);
-    showNotification(`Target "${newTracker.name}" berhasil dibuat!`);
+    showNotification(`${newTracker.name} ${t('common_saved')}`);
   };
 
   // Update a tracker card
@@ -122,7 +124,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
   // Import items from current active plan
   const handleImportFromPlanner = () => {
     if (!currentPlan || !currentPlan.steps || currentPlan.steps.length === 0) {
-      alert('Plan ini belum memiliki step massing.');
+      alert(t('steps_title'));
       return;
     }
 
@@ -157,12 +159,12 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
     });
 
     if (created.length === 0) {
-      alert(`Plan "${currentPlan.name}" belum memiliki nama Seed 1 atau Seed 2. Tentukan nama seed terlebih dahulu di Massing Planner.`);
+      alert(`${currentPlan.name}: ${t('seed_1_label')} / ${t('seed_2_label')}`);
       return;
     }
 
     updateTrackers([...trackers, ...created]);
-    showNotification(`Berhasil memuat ${created.length} bahan dari plan!`);
+    showNotification(`+${created.length} ${t('tracker_targets_count')}`);
   };
 
   // Apply tracked purchases to Massing Planner with auto-categorization by price
@@ -171,14 +173,14 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
 
     const newSteps = [...(currentPlan.steps || [])];
     if (!newSteps[stepIndex]) {
-      alert(`Step ${stepIndex + 1} tidak ditemukan.`);
+      alert(`${t('common_step')} ${stepIndex + 1}`);
       return;
     }
 
     const step = { ...newSteps[stepIndex] };
 
     if (!purchases || purchases.length === 0) {
-      alert('Belum ada riwayat pembelian untuk tracker ini.');
+      alert(t('tracker_no_history'));
       return;
     }
 
@@ -245,7 +247,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
     }
 
     showNotification(
-      `Berhasil dikirim ke Step ${stepIndex + 1} (${seedSlot === 'seed1' ? 'Seed 1' : 'Seed 2'})!`
+      `${t('common_applied')} ➔ ${t('common_step')} ${stepIndex + 1} (${seedSlot === 'seed1' ? 'Seed 1' : 'Seed 2'})`
     );
   };
 
@@ -254,15 +256,13 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
   let totalAllTarget = 0;
   let totalAllCostWL = 0;
 
-  trackers.forEach((t) => {
-    totalAllTarget += parseInt(t.targetQty) || 0;
-    (t.purchases || []).forEach((p) => {
+  trackers.forEach((tItem) => {
+    totalAllTarget += parseInt(tItem.targetQty) || 0;
+    (tItem.purchases || []).forEach((p) => {
       totalAllQty += parseInt(p.qty) || 0;
       totalAllCostWL += calculateCost(p.qty, p.price, p.priceFormat || 'perWL');
     });
   });
-
-  const wlRate = currentPlan?.wlToIdrRate || 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -272,12 +272,12 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
           <div className="space-y-1.5">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <FiShoppingCart className="text-emerald-400 w-5 h-5" />
-              Tracker Pembelian Seed
+              {t('tracker_title')}
             </h2>
 
             {/* Plan Selector */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-gray-400">Terhubung:</span>
+              <span className="text-xs text-gray-400">{t('tracker_connected_plan')}</span>
               <div className="flex items-center gap-1.5 bg-gray-750 px-2.5 py-1 rounded-lg border border-gray-650">
                 <FiFolder className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
                 <select
@@ -287,13 +287,13 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
                 >
                   {allPlanOptions.map((p) => (
                     <option key={p.id} value={p.id} className="bg-gray-800 text-white">
-                      {p.name || 'Untitled Plan'} ({p.steps?.length || 0} steps)
+                      {p.name || 'Untitled Plan'} ({p.steps?.length || 0} {t('common_steps')})
                     </option>
                   ))}
                 </select>
               </div>
               <span className="text-xs text-gray-500">
-                • {trackers.length} target
+                • {trackers.length} {t('tracker_targets_count')}
               </span>
             </div>
           </div>
@@ -304,10 +304,10 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
               type="button"
               onClick={handleImportFromPlanner}
               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
-              title="Ambil bahan Seed 1 & Seed 2 dari plan ini"
+              title={t('tracker_import_plan')}
             >
               <FiDownload className="w-3.5 h-3.5" />
-              <span>Import dari Plan</span>
+              <span>{t('tracker_import_plan')}</span>
             </button>
             <button
               type="button"
@@ -315,14 +315,14 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
               className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <FiPlus className="w-3.5 h-3.5" />
-              <span>+ Tambah Target</span>
+              <span>{t('tracker_add_target')}</span>
             </button>
             {trackers.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowClearAllConfirm(true)}
                 className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700/60 rounded-lg transition-colors"
-                title="Hapus semua target di plan ini"
+                title={t('confirm_clear_all_trackers_title')}
               >
                 <FiTrash2 className="w-4 h-4" />
               </button>
@@ -343,7 +343,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
                 onClick={onNavigateToPlanner}
                 className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs transition-colors flex-shrink-0"
               >
-                Ke Massing Planner ➔
+                {t('tab_planner')} ➔
               </button>
             )}
           </div>
@@ -353,21 +353,21 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
         {trackers.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-gray-700/70">
             <div className="p-3 bg-gray-750/50 rounded-xl border border-gray-700/70">
-              <span className="text-[11px] text-gray-400 block mb-0.5">Total Target</span>
-              <span className="text-base sm:text-lg font-bold text-white">{formatNumber(totalAllTarget)}</span>
+              <span className="text-[11px] text-gray-400 block mb-0.5">{t('tracker_total_target')}</span>
+              <span className="text-base sm:text-lg font-bold text-white">{formatNumberLocalized(totalAllTarget)}</span>
             </div>
             <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/25">
-              <span className="text-[11px] text-emerald-300 block mb-0.5">Sudah Terbeli</span>
-              <span className="text-base sm:text-lg font-bold text-emerald-400">{formatNumber(totalAllQty)}</span>
+              <span className="text-[11px] text-emerald-300 block mb-0.5">{t('tracker_purchased')}</span>
+              <span className="text-base sm:text-lg font-bold text-emerald-400">{formatNumberLocalized(totalAllQty)}</span>
             </div>
             <div className="p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/25">
-              <span className="text-[11px] text-yellow-300 block mb-0.5">Sisa Belum Terbeli</span>
+              <span className="text-[11px] text-yellow-300 block mb-0.5">{t('tracker_remaining')}</span>
               <span className="text-base sm:text-lg font-bold text-yellow-400">
-                {formatNumber(Math.max(0, totalAllTarget - totalAllQty))}
+                {formatNumberLocalized(Math.max(0, totalAllTarget - totalAllQty))}
               </span>
             </div>
             <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/25">
-              <span className="text-[11px] text-red-300 block mb-0.5">Total Modal Keluar</span>
+              <span className="text-[11px] text-red-300 block mb-0.5">{t('tracker_total_cost')}</span>
               <span className="text-base sm:text-lg font-bold text-red-400">{fmtWL(totalAllCostWL)} WL</span>
             </div>
           </div>
@@ -381,9 +381,9 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
             <FiShoppingCart className="w-6 h-6" />
           </div>
           <div className="max-w-md mx-auto space-y-1">
-            <h3 className="text-sm font-bold text-white">Belum Ada Target Belanja</h3>
+            <h3 className="text-sm font-bold text-white">{t('tracker_empty_title')}</h3>
             <p className="text-xs text-gray-400">
-              Klik <strong>Import dari Plan</strong> untuk langsung memuat bahan dari plan, atau buat target manual.
+              {t('tracker_empty_desc')}
             </p>
           </div>
           <div className="flex flex-wrap justify-center items-center gap-2 pt-2">
@@ -393,7 +393,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
               className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <FiDownload className="w-3.5 h-3.5" />
-              <span>Import dari Plan</span>
+              <span>{t('tracker_import_plan')}</span>
             </button>
             <button
               type="button"
@@ -401,7 +401,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
               className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <FiPlus className="w-3.5 h-3.5" />
-              <span>+ Buat Manual</span>
+              <span>{t('tracker_create_manual')}</span>
             </button>
           </div>
         </div>
@@ -427,7 +427,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
           <div className="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-2 border-b border-gray-700">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <FiPlus className="text-emerald-400" /> Tambah Target Belanja
+                <FiPlus className="text-emerald-400" /> {t('tracker_modal_add_title')}
               </h3>
               <button
                 type="button"
@@ -440,17 +440,17 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
 
             <form onSubmit={handleCreateTracker} className="space-y-3 text-xs">
               <div>
-                <label className="block font-medium text-gray-400 mb-1">Nama Item / Seed</label>
+                <label className="block font-medium text-gray-400 mb-1">{t('tracker_modal_item_label')}</label>
                 <ItemSearch
                   value={newItemName}
                   onChange={(item) => setNewItemName(item ? item.name : '')}
-                  placeholder="Cari item..."
+                  placeholder={t('common_search')}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-medium text-gray-400 mb-1">Target Beli</label>
+                  <label className="block font-medium text-gray-400 mb-1">{t('tracker_modal_target_label')}</label>
                   <input
                     type="number"
                     value={newTargetQty}
@@ -460,7 +460,7 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-400 mb-1">Harga Bawaan</label>
+                  <label className="block font-medium text-gray-400 mb-1">{t('tracker_modal_default_price')}</label>
                   <div className="flex gap-1">
                     <input
                       type="number"
@@ -474,8 +474,8 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
                       onChange={(e) => setNewPriceFormat(e.target.value)}
                       className="px-1.5 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-[11px] text-white"
                     >
-                      <option value="perWL">/ WL</option>
-                      <option value="each">each</option>
+                      <option value="perWL">{t('unit_per_wl')}</option>
+                      <option value="each">{t('unit_wl_each')}</option>
                     </select>
                   </div>
                 </div>
@@ -487,14 +487,14 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
                   onClick={() => setShowAddModal(false)}
                   className="px-3 py-1.5 bg-gray-700 hover:bg-gray-650 text-gray-300 rounded-lg text-xs"
                 >
-                  Batal
+                  {t('common_cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={!newItemName.trim()}
                   className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold"
                 >
-                  Tambah Target
+                  {t('common_add')}
                 </button>
               </div>
             </form>
@@ -507,10 +507,10 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
         isOpen={showClearAllConfirm}
         onClose={() => setShowClearAllConfirm(false)}
         onConfirm={handleClearAll}
-        title="Hapus Semua Target Belanja?"
-        message={`Apakah Anda yakin ingin menghapus semua target belanja untuk plan "${currentPlan?.name || 'ini'}"?`}
-        confirmText="Ya, Hapus Semua"
-        cancelText="Batal"
+        title={t('confirm_clear_all_trackers_title')}
+        message={t('confirm_clear_all_trackers_msg')}
+        confirmText={t('common_yes_delete')}
+        cancelText={t('common_cancel')}
       />
     </div>
   );

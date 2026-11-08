@@ -6,10 +6,12 @@ import ConfirmModal from '../Common/ConfirmModal';
 import { createDefaultStep, createDefaultPlan } from '../../data/growtopiaItems';
 import { useLocalStorage, useSavedPlans } from '../../hooks/useLocalStorage';
 import { extractPlanFromURL } from '../../utils/sharing';
-import { fmtWL, calculateStep, formatNumber, calculateBEP, formatBEP } from '../../utils/calculations';
+import { fmtWL, calculateStep, calculateBEP, formatBEP } from '../../utils/calculations';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { FiPlus, FiSave, FiFolder, FiTrash2, FiCopy, FiCheckCircle } from 'react-icons/fi';
 
 export default function MassingPlanner() {
+  const { t, formatNumberLocalized, language } = useLanguage();
   const [plan, setPlan] = useLocalStorage('gt-current-plan', createDefaultPlan());
   const { plans: savedPlans, savePlan, deletePlan } = useSavedPlans();
   const [showSavedPlans, setShowSavedPlans] = useState(false);
@@ -55,7 +57,7 @@ export default function MassingPlanner() {
 
   const handleSavePlan = () => {
     savePlan(plan);
-    setSaveNotice('Tersimpan!');
+    setSaveNotice(t('common_saved'));
     setTimeout(() => setSaveNotice(''), 2000);
   };
 
@@ -112,7 +114,7 @@ export default function MassingPlanner() {
     const duplicated = duplicatePlan(plan);
     setPlan(duplicated);
     savePlan(duplicated);
-    setSaveNotice('Plan Diduplikat!');
+    setSaveNotice(t('common_duplicated'));
     setTimeout(() => setSaveNotice(''), 2500);
   };
 
@@ -120,7 +122,7 @@ export default function MassingPlanner() {
     e.stopPropagation();
     const duplicated = duplicatePlan(sp);
     savePlan(duplicated);
-    setSaveNotice('Salinan Tersimpan!');
+    setSaveNotice(t('common_duplicated'));
     setTimeout(() => setSaveNotice(''), 2500);
   };
 
@@ -156,14 +158,14 @@ export default function MassingPlanner() {
               type="text"
               value={plan.name}
               onChange={(e) => updatePlan({ name: e.target.value })}
-              placeholder="Nama Plan Massing..."
+              placeholder={t('plan_name_placeholder')}
               className="w-full text-xl sm:text-2xl font-bold bg-transparent border-none outline-none text-white placeholder-gray-500"
             />
             <input
               type="text"
               value={plan.description || ''}
               onChange={(e) => updatePlan({ description: e.target.value })}
-              placeholder="Deskripsi singkat (opsional)..."
+              placeholder={t('plan_desc_placeholder')}
               className="w-full text-xs sm:text-sm bg-transparent border-none outline-none text-gray-400 placeholder-gray-600 mt-0.5"
             />
           </div>
@@ -173,29 +175,29 @@ export default function MassingPlanner() {
             <button
               onClick={handleNewPlan}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-750 hover:bg-gray-700 border border-gray-650 text-gray-300 rounded-lg text-xs font-semibold transition-colors"
-              title="Plan Baru"
+              title={t('common_new')}
             >
-              <FiPlus className="w-3.5 h-3.5" /> Baru
+              <FiPlus className="w-3.5 h-3.5" /> {t('common_new')}
             </button>
             <button
               onClick={handleSavePlan}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
             >
               <FiSave className="w-3.5 h-3.5" />
-              {saveNotice || 'Simpan'}
+              {saveNotice || t('common_save')}
             </button>
             <button
               onClick={handleDuplicateCurrentPlan}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-750 hover:bg-gray-700 border border-gray-650 text-gray-300 hover:text-amber-300 rounded-lg text-xs font-semibold transition-colors"
-              title="Duplikat plan saat ini (buat salinan)"
+              title={t('common_duplicate')}
             >
-              <FiCopy className="w-3.5 h-3.5 text-amber-400" /> Duplikat
+              <FiCopy className="w-3.5 h-3.5 text-amber-400" /> {t('common_duplicate')}
             </button>
             <button
               onClick={() => setShowSavedPlans(!showSavedPlans)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-750 hover:bg-gray-700 border border-gray-650 text-gray-300 rounded-lg text-xs font-semibold transition-colors"
             >
-              <FiFolder className="w-3.5 h-3.5" /> Plans ({savedPlans.length})
+              <FiFolder className="w-3.5 h-3.5" /> {t('common_plans')} ({savedPlans.length})
             </button>
             <SharePlan plan={plan} onImport={handleImportPlan} />
           </div>
@@ -205,7 +207,7 @@ export default function MassingPlanner() {
         {showSavedPlans && savedPlans.length > 0 && (
           <div className="border-t border-gray-700/80 pt-3 space-y-2 animate-fade-in">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-gray-400">Plans Tersimpan:</h3>
+              <h3 className="text-xs font-semibold text-gray-400">{t('saved_plans_title')}</h3>
               {saveNotice && (
                 <span className="text-xs text-emerald-400 font-medium animate-fade-in">
                   ✓ {saveNotice}
@@ -218,18 +220,17 @@ export default function MassingPlanner() {
                   <button
                     onClick={() => handleLoadPlan(sp)}
                     className="text-left flex-1 min-w-0 mr-2"
-                    title="Buka plan ini"
                   >
                     <p className="text-xs font-semibold text-white truncate">{sp.name}</p>
                     <p className="text-[11px] text-gray-400">
-                      {sp.steps?.length || 0} steps • {new Date(sp.savedAt).toLocaleDateString('id-ID')}
+                      {sp.steps?.length || 0} {t('common_steps')} • {new Date(sp.savedAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')}
                     </p>
                   </button>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       onClick={(e) => handleDuplicateSavedPlan(sp, e)}
                       className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg transition-colors"
-                      title="Duplikat plan ini"
+                      title={t('common_duplicate')}
                     >
                       <FiCopy className="w-3.5 h-3.5" />
                     </button>
@@ -239,7 +240,7 @@ export default function MassingPlanner() {
                         setPlanToDelete(sp);
                       }}
                       className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
-                      title="Hapus plan"
+                      title={t('common_delete')}
                     >
                       <FiTrash2 className="w-3.5 h-3.5" />
                     </button>
@@ -263,13 +264,13 @@ export default function MassingPlanner() {
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2.5">
-                    <h2 className="text-base sm:text-lg font-bold text-white">Tahapan Splicing & Farm</h2>
+                    <h2 className="text-base sm:text-lg font-bold text-white">{t('steps_title')}</h2>
                     <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-gray-800 text-gray-300 border border-gray-700">
-                      {completedSteps} / {totalSteps} Selesai
+                      {completedSteps} / {totalSteps} {t('common_done')}
                     </span>
                     {completedSteps === totalSteps && totalSteps > 0 && (
                       <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        🎉 Selesai Semua
+                        {t('steps_completed_all')}
                       </span>
                     )}
                   </div>
@@ -280,18 +281,18 @@ export default function MassingPlanner() {
                           type="button"
                           onClick={() => handleToggleAllSteps(false)}
                           className="px-2.5 py-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors text-[11px] font-medium"
-                          title="Ringkas semua step"
+                          title={t('steps_collapse_all')}
                         >
-                          Tutup Semua
+                          {t('steps_collapse_all')}
                         </button>
                         <span className="text-gray-600">|</span>
                         <button
                           type="button"
                           onClick={() => handleToggleAllSteps(true)}
                           className="px-2.5 py-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors text-[11px] font-medium"
-                          title="Buka semua step"
+                          title={t('steps_expand_all')}
                         >
-                          Buka Semua
+                          {t('steps_expand_all')}
                         </button>
                       </div>
                     )}
@@ -299,7 +300,7 @@ export default function MassingPlanner() {
                       onClick={addStep}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
                     >
-                      <FiPlus className="w-3.5 h-3.5" /> Tambah Step
+                      <FiPlus className="w-3.5 h-3.5" /> {t('steps_add_step')}
                     </button>
                   </div>
                 </div>
@@ -310,7 +311,7 @@ export default function MassingPlanner() {
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-gray-400 font-medium flex items-center gap-1.5">
                         <FiCheckCircle className={completedPercent === 100 ? 'text-emerald-400' : 'text-blue-400'} />
-                        Progress: <strong className="text-white">{completedSteps} dari {totalSteps} step</strong>
+                        {t('progress_label')}: <strong className="text-white">{completedSteps} {t('progress_of')} {totalSteps} {t('common_steps')}</strong>
                       </span>
                       <span className={`font-bold ${completedPercent === 100 ? 'text-emerald-400' : 'text-white'}`}>
                         {completedPercent}%
@@ -349,7 +350,7 @@ export default function MassingPlanner() {
                   });
                 }}
                 onUpdate={(updated) => updateStep(index, updated)}
-                onRemove={() => setStepToDelete({ index, name: step.name || `Step ${index + 1}` })}
+                onRemove={() => setStepToDelete({ index, name: step.name || `${t('common_step')} ${index + 1}` })}
                 onDuplicate={() => duplicateStep(index)}
                 isOnly={plan.steps.length === 1}
               />
@@ -378,13 +379,13 @@ export default function MassingPlanner() {
 
             return (
               <div className="bg-gray-800 border border-gray-700/80 rounded-2xl p-4 space-y-3.5 shadow-sm">
-                <h3 className="text-sm font-semibold text-white">Pengaturan Penjualan</h3>
+                <h3 className="text-sm font-semibold text-white">{t('sell_settings_title')}</h3>
 
                 {/* Final Output Estimation Card */}
                 <div className="p-3 bg-gray-750/50 border border-gray-700 rounded-xl space-y-2.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-emerald-400">
-                      Estimasi Panen Final (Step {plan.steps.length})
+                      {t('final_harvest_title')} ({t('common_step')} {plan.steps.length})
                     </span>
                     {finalStepItem && (
                       <span className="text-[11px] text-gray-300 bg-gray-700 px-2 py-0.5 rounded truncate max-w-[130px]">
@@ -396,19 +397,19 @@ export default function MassingPlanner() {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-[11px] font-medium text-gray-400 mb-1">
-                        Hasil Splicing
+                        {t('splicing_result_label')}
                       </label>
                       <input
                         type="text"
                         readOnly
-                        value={finalSplicingSeeds > 0 ? `${formatNumber(finalSplicingSeeds)} seeds` : '0 seeds'}
+                        value={finalSplicingSeeds > 0 ? `${formatNumberLocalized(finalSplicingSeeds)} ${t('common_seeds')}` : `0 ${t('common_seeds')}`}
                         className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-emerald-400 font-bold text-xs select-none"
                       />
                     </div>
 
                     <div>
                       <label className="block text-[11px] font-medium text-gray-400 mb-1">
-                        Rasio Block / Tree
+                        {t('block_tree_ratio_label')}
                       </label>
                       <input
                         type="number"
@@ -425,9 +426,9 @@ export default function MassingPlanner() {
                   {estimatedHarvestBlocks > 0 && (
                     <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <span className="text-[10px] text-yellow-300 block">Estimasi Block:</span>
+                        <span className="text-[10px] text-yellow-300 block">{t('estimated_blocks_label')}</span>
                         <p className="text-sm font-bold text-yellow-400 truncate">
-                          {formatNumber(estimatedHarvestBlocks)} <span className="text-xs font-normal text-gray-400">blocks</span>
+                          {formatNumberLocalized(estimatedHarvestBlocks)} <span className="text-xs font-normal text-gray-400">{t('common_blocks')}</span>
                         </p>
                       </div>
                       <button
@@ -435,20 +436,20 @@ export default function MassingPlanner() {
                         onClick={() => updatePlan({ totalFinalOutput: estimatedHarvestBlocks })}
                         className="px-2.5 py-1 bg-yellow-600 hover:bg-yellow-500 text-white rounded text-xs font-semibold transition-colors flex-shrink-0"
                       >
-                        Pakai Block ➔
+                        {t('use_blocks_btn')}
                       </button>
                     </div>
                   )}
 
                   {finalSplicingSeeds > 0 && (
                     <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-700">
-                      <span className="text-gray-400 text-[11px]">Jual berupa seed?</span>
+                      <span className="text-gray-400 text-[11px]">{t('sell_as_seeds_question')}</span>
                       <button
                         type="button"
                         onClick={() => updatePlan({ totalFinalOutput: finalSplicingSeeds })}
                         className="text-emerald-400 hover:underline text-xs font-semibold"
                       >
-                        Pakai Seed ({formatNumber(finalSplicingSeeds)}) ➔
+                        {t('use_seeds_btn')} ({formatNumberLocalized(finalSplicingSeeds)}) ➔
                       </button>
                     </div>
                   )}
@@ -457,24 +458,24 @@ export default function MassingPlanner() {
                 {/* Total Quantity & Price Inputs */}
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">Total Hasil Akhir (item)</label>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">{t('total_final_output_label')}</label>
                     <input
                       type="number"
                       value={plan.totalFinalOutput || ''}
                       onChange={(e) => updatePlan({ totalFinalOutput: parseInt(e.target.value) || 0 })}
-                      placeholder={finalSplicingSeeds > 0 ? `${finalSplicingSeeds}` : 'Jumlah produk jadi'}
+                      placeholder={finalSplicingSeeds > 0 ? `${finalSplicingSeeds}` : t('total_final_output_placeholder')}
                       className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">Harga Jual</label>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">{t('sell_price_label')}</label>
                     <div className="flex gap-2">
                       <input
                         type="number"
                         value={plan.sellPrice || ''}
                         onChange={(e) => updatePlan({ sellPrice: parseFloat(e.target.value) || 0 })}
-                        placeholder={plan.sellPriceFormat === 'perWL' ? 'Contoh: 50' : 'Contoh: 3'}
+                        placeholder={plan.sellPriceFormat === 'perWL' ? '50' : '3'}
                         className="flex-1 px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                       <select
@@ -482,14 +483,14 @@ export default function MassingPlanner() {
                         onChange={(e) => updatePlan({ sellPriceFormat: e.target.value })}
                         className="px-2 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-xs text-white focus:outline-none min-w-[95px]"
                       >
-                        <option value="perWL">qty / WL</option>
-                        <option value="each">WL each</option>
+                        <option value="perWL">{t('unit_per_wl')}</option>
+                        <option value="each">{t('unit_wl_each')}</option>
                       </select>
                     </div>
 
                     {plan.sellPrice > 0 && (plan.totalFinalOutput > 0 || finalSplicingSeeds > 0) && (
                       <div className="flex items-center justify-between text-xs mt-1.5 text-emerald-400">
-                        <span>Estimasi Pendapatan:</span>
+                        <span>{t('estimated_revenue_label')}</span>
                         <span className="font-bold">
                           {fmtWL(plan.sellPriceFormat === 'perWL'
                             ? (plan.totalFinalOutput || finalSplicingSeeds) / plan.sellPrice
@@ -502,7 +503,7 @@ export default function MassingPlanner() {
                     {bep > 0 && (
                       <div className="flex items-center justify-between text-xs mt-2 p-2 bg-amber-500/10 border border-amber-500/25 rounded-lg">
                         <span className="text-amber-300 font-medium">
-                          BEP: <strong>{formatBEP(bep, plan.sellPriceFormat || 'perWL')}</strong>
+                          {t('bep_label')} <strong>{formatBEP(bep, plan.sellPriceFormat || 'perWL')}</strong>
                         </span>
                         {plan.sellPrice !== bepRounded && (
                           <button
@@ -510,7 +511,7 @@ export default function MassingPlanner() {
                             onClick={() => updatePlan({ sellPrice: bepRounded })}
                             className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold hover:underline"
                           >
-                            Pakai BEP ➔
+                            {t('use_bep_btn')}
                           </button>
                         )}
                       </div>
@@ -536,10 +537,10 @@ export default function MassingPlanner() {
             setStepToDelete(null);
           }
         }}
-        title={`Hapus ${stepToDelete?.name}?`}
-        message={`Apakah Anda yakin ingin menghapus Step ${stepToDelete ? stepToDelete.index + 1 : ''} (${stepToDelete?.name})? Seluruh kalkulasi pohon, TM, dan modalnya akan dihapus.`}
-        confirmText="Ya, Hapus Step"
-        cancelText="Batal"
+        title={`${t('common_delete')} ${stepToDelete?.name}?`}
+        message={t('confirm_delete_step_msg')}
+        confirmText={t('common_yes_delete')}
+        cancelText={t('common_cancel')}
       />
 
       {/* Confirmation Modal for Plan Deletion */}
@@ -552,10 +553,10 @@ export default function MassingPlanner() {
             setPlanToDelete(null);
           }
         }}
-        title={`Hapus Plan "${planToDelete?.name}"?`}
-        message={`Apakah Anda yakin ingin menghapus plan "${planToDelete?.name}"? Plan yang tersimpan ini akan dihapus permanen dari browser Anda.`}
-        confirmText="Ya, Hapus Plan"
-        cancelText="Batal"
+        title={`${t('common_delete')} "${planToDelete?.name}"?`}
+        message={t('confirm_delete_plan_msg')}
+        confirmText={t('common_yes_delete')}
+        cancelText={t('common_cancel')}
       />
     </div>
   );

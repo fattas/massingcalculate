@@ -2,10 +2,12 @@ import { useState } from 'react';
 import ItemSearch from '../Common/ItemSearch';
 import ItemIcon from '../Common/ItemIcon';
 import ConfirmModal from '../Common/ConfirmModal';
-import { calculateStep, formatNumber, fmtWL } from '../../utils/calculations';
+import { calculateStep, fmtWL } from '../../utils/calculations';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { FiTrash2, FiChevronDown, FiChevronUp, FiCpu, FiPlus, FiClock, FiCopy, FiCheck, FiArrowRight } from 'react-icons/fi';
 
-function PriceInput({ price, priceFormat, onPriceChange, onFormatChange, placeholder = 'Harga' }) {
+function PriceInput({ price, priceFormat, onPriceChange, onFormatChange, placeholder }) {
+  const { t } = useLanguage();
   return (
     <div className="flex gap-1.5 items-center">
       <div className="flex-1 min-w-[70px]">
@@ -13,7 +15,7 @@ function PriceInput({ price, priceFormat, onPriceChange, onFormatChange, placeho
           type="number"
           value={price || ''}
           onChange={(e) => onPriceChange(parseFloat(e.target.value) || 0)}
-          placeholder={placeholder}
+          placeholder={placeholder || t('common_price')}
           className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
         />
       </div>
@@ -22,8 +24,8 @@ function PriceInput({ price, priceFormat, onPriceChange, onFormatChange, placeho
         onChange={(e) => onFormatChange(e.target.value)}
         className="px-2 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 min-w-[85px] cursor-pointer"
       >
-        <option value="perWL">/ WL</option>
-        <option value="each">each</option>
+        <option value="perWL">{t('unit_per_wl')}</option>
+        <option value="each">{t('unit_wl_each')}</option>
       </select>
     </div>
   );
@@ -39,6 +41,7 @@ export default function RecipeStep({
   prevStepSeeds = 0,
   onApplyPrevStep,
 }) {
+  const { t, formatTimeLocalized, formatNumberLocalized } = useLanguage();
   const isExpanded = step.isExpanded !== undefined ? Boolean(step.isExpanded) : true;
   const [extraToDelete, setExtraToDelete] = useState(null);
 
@@ -174,6 +177,11 @@ export default function RecipeStep({
     ? (fuelPriceFormat === 'each' ? fuelQty * fuelPrice : fuelQty / fuelPrice)
     : 0;
 
+  // Localized TM break time
+  const formattedBreakTime = results.tmBreakTime?.totalSeconds
+    ? formatTimeLocalized(results.tmBreakTime.totalSeconds)
+    : `0 ${t('time_seconds')}`;
+
   return (
     <div
       className={`border rounded-xl overflow-hidden transition-all duration-200 animate-fade-in shadow-sm ${
@@ -205,16 +213,16 @@ export default function RecipeStep({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h3 className={`text-sm font-semibold truncate ${step.isCompleted ? 'text-emerald-300' : 'text-white'}`}>
-                {step.name || `Step ${index + 1}`}
+                {step.name || `${t('common_step')} ${index + 1}`}
               </h3>
               {step.isCompleted && (
                 <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  Selesai
+                  {t('common_done')}
                 </span>
               )}
             </div>
             <p className="text-xs text-gray-400 truncate flex items-center gap-1.5">
-              <span>{step.resultItemName || 'Belum ada hasil'}</span>
+              <span>{step.resultItemName || t('common_optional')}</span>
               {step.useTM && (
                 <>
                   <span className="text-gray-600">•</span>
@@ -239,7 +247,7 @@ export default function RecipeStep({
                 ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30'
                 : 'bg-gray-700/60 border border-gray-600/70 text-gray-300 hover:text-white hover:bg-gray-700'
             }`}
-            title={step.isCompleted ? 'Klik untuk membatalkan status selesai' : 'Klik untuk menandai step ini sudah selesai'}
+            title={step.isCompleted ? t('common_unmark') : t('common_mark_done')}
           >
             <span
               className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-colors ${
@@ -251,7 +259,7 @@ export default function RecipeStep({
               {step.isCompleted && <FiCheck className="w-2.5 h-2.5 stroke-[3]" />}
             </span>
             <span className="hidden sm:inline">
-              {step.isCompleted ? 'Selesai' : 'Tandai'}
+              {step.isCompleted ? t('common_done') : t('common_mark_done')}
             </span>
           </button>
 
@@ -259,7 +267,7 @@ export default function RecipeStep({
             <button
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
               className="p-1.5 text-gray-400 hover:text-amber-300 hover:bg-gray-700/70 rounded-lg transition-colors"
-              title="Duplikat step ini"
+              title={t('common_duplicate')}
             >
               <FiCopy className="w-3.5 h-3.5" />
             </button>
@@ -269,7 +277,7 @@ export default function RecipeStep({
             <button
               onClick={(e) => { e.stopPropagation(); onRemove(); }}
               className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-              title="Hapus step ini"
+              title={t('common_delete')}
             >
               <FiTrash2 className="w-3.5 h-3.5" />
             </button>
@@ -286,12 +294,12 @@ export default function RecipeStep({
         <div className="p-4 border-t border-gray-700/80 space-y-4">
           {/* Step Name Input */}
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">Nama Step</label>
+            <label className="block text-xs font-medium text-gray-400 mb-1">{t('step_name_label')}</label>
             <input
               type="text"
               value={step.name}
               onChange={(e) => handleFieldChange('name', e.target.value)}
-              placeholder="Contoh: Farm Chicken Seeds"
+              placeholder={t('step_name_placeholder')}
               className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
@@ -300,15 +308,15 @@ export default function RecipeStep({
           {prevStepSeeds > 0 && onApplyPrevStep && (
             <div className="flex items-center justify-between p-2.5 bg-blue-500/10 border border-blue-500/25 rounded-lg text-xs">
               <span className="text-blue-300">
-                📦 Hasil Step {index}: <strong className="text-white">{formatNumber(prevStepSeeds)} seeds</strong>
+                📦 {t('prev_step_result')} {index}: <strong className="text-white">{formatNumberLocalized(prevStepSeeds)} {t('common_seeds')}</strong>
               </span>
               <button
                 type="button"
                 onClick={() => onApplyPrevStep(prevStepSeeds)}
                 className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium transition-colors"
-                title="Gunakan sebagai Seed 1 dan Total Ditanam"
+                title={t('use_in_this_step')}
               >
-                Gunakan di Step Ini ➔
+                {t('use_in_this_step')}
               </button>
             </div>
           )}
@@ -320,7 +328,7 @@ export default function RecipeStep({
               <div className="space-y-2.5">
                 {/* Search Item */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 1</label>
+                  <label className="block text-xs font-medium text-gray-400 mb-1">{t('seed_1_label')}</label>
                   <div className="flex items-center gap-2">
                     {step.seedName1 && (
                       <ItemIcon name={step.seedName1} size={36} className="rounded-lg shadow-sm shrink-0" />
@@ -329,7 +337,7 @@ export default function RecipeStep({
                       <ItemSearch
                         value={step.seedName1}
                         onChange={(item) => handleItemSelect('seedName1', item)}
-                        placeholder="Cari seed 1..."
+                        placeholder={t('seed_1_placeholder')}
                       />
                     </div>
                   </div>
@@ -339,7 +347,7 @@ export default function RecipeStep({
                 <div className="p-2.5 bg-gray-700/40 rounded-lg border border-gray-650/60 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-gray-300">
-                      Pembelian Utama
+                      {t('primary_purchase')}
                     </span>
                     {primarySeed1Cost > 0 && (
                       <span className="text-yellow-400 font-semibold text-[11px]">
@@ -353,7 +361,7 @@ export default function RecipeStep({
                         type="number"
                         value={step.seed1Qty || ''}
                         onChange={(e) => handleFieldChange('seed1Qty', parseInt(e.target.value) || 0)}
-                        placeholder="Jumlah seed"
+                        placeholder={t('qty_seed_placeholder')}
                         className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
@@ -363,7 +371,7 @@ export default function RecipeStep({
                         priceFormat={step.seed1PriceFormat}
                         onPriceChange={(v) => handleFieldChange('seed1Price', v)}
                         onFormatChange={(v) => handleFieldChange('seed1PriceFormat', v)}
-                        placeholder="Harga"
+                        placeholder={t('common_price')}
                       />
                     </div>
                   </div>
@@ -378,7 +386,7 @@ export default function RecipeStep({
                     <div key={extra.id} className="p-2.5 bg-gray-700/30 border border-gray-650/50 rounded-lg space-y-2 animate-fade-in">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-semibold text-emerald-400 text-[11px]">
-                          Tambahan #{idx + 1}
+                          {t('extra_batch_title')} #{idx + 1}
                         </span>
                         <div className="flex items-center gap-2">
                           {extraCost > 0 && (
@@ -400,7 +408,7 @@ export default function RecipeStep({
                               })
                             }
                             className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
-                            title="Hapus batch ini"
+                            title={t('common_delete')}
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
                           </button>
@@ -411,7 +419,7 @@ export default function RecipeStep({
                           type="number"
                           value={extra.qty || ''}
                           onChange={(e) => handleUpdateSeed1Extra(extra.id, 'qty', parseInt(e.target.value) || 0)}
-                          placeholder="Jumlah seed"
+                          placeholder={t('qty_seed_placeholder')}
                           className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
                         <PriceInput
@@ -419,7 +427,7 @@ export default function RecipeStep({
                           priceFormat={extra.priceFormat || 'perWL'}
                           onPriceChange={(v) => handleUpdateSeed1Extra(extra.id, 'price', v)}
                           onFormatChange={(v) => handleUpdateSeed1Extra(extra.id, 'priceFormat', v)}
-                          placeholder="Harga"
+                          placeholder={t('common_price')}
                         />
                       </div>
                     </div>
@@ -433,7 +441,7 @@ export default function RecipeStep({
                   className="w-full py-1.5 px-2 bg-gray-700/30 hover:bg-gray-700/60 border border-dashed border-gray-600 text-gray-400 hover:text-emerald-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <FiPlus className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>+ Tambah Pembelian Seed 1</span>
+                  <span>{t('add_purchase_batch')} (Seed 1)</span>
                 </button>
               </div>
 
@@ -441,7 +449,7 @@ export default function RecipeStep({
               {(totalSeed1Qty > 0 || totalSeed1Cost > 0) && (
                 <div className="pt-2 border-t border-gray-700/70 flex items-center justify-between text-xs">
                   <span className="text-gray-300">
-                    Total: <strong className="text-white">{formatNumber(totalSeed1Qty)} seeds</strong>
+                    {t('common_total')}: <strong className="text-white">{formatNumberLocalized(totalSeed1Qty)} {t('common_seeds')}</strong>
                   </span>
                   <span className="text-yellow-400 font-bold">
                     {fmtWL(totalSeed1Cost)} WL
@@ -460,7 +468,7 @@ export default function RecipeStep({
               <div className="space-y-2.5">
                 {/* Search Item */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1">Seed / Bahan 2</label>
+                  <label className="block text-xs font-medium text-gray-400 mb-1">{t('seed_2_label')}</label>
                   <div className="flex items-center gap-2">
                     {step.seedName2 && (
                       <ItemIcon name={step.seedName2} size={36} className="rounded-lg shadow-sm shrink-0" />
@@ -469,7 +477,7 @@ export default function RecipeStep({
                       <ItemSearch
                         value={step.seedName2}
                         onChange={(item) => handleItemSelect('seedName2', item)}
-                        placeholder="Cari seed 2..."
+                        placeholder={t('seed_2_placeholder')}
                       />
                     </div>
                   </div>
@@ -479,7 +487,7 @@ export default function RecipeStep({
                 <div className="p-2.5 bg-gray-700/40 rounded-lg border border-gray-650/60 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-gray-300">
-                      Pembelian Utama
+                      {t('primary_purchase')}
                     </span>
                     {primarySeed2Cost > 0 && (
                       <span className="text-yellow-400 font-semibold text-[11px]">
@@ -493,7 +501,7 @@ export default function RecipeStep({
                         type="number"
                         value={step.seed2Qty || ''}
                         onChange={(e) => handleFieldChange('seed2Qty', parseInt(e.target.value) || 0)}
-                        placeholder="Jumlah seed"
+                        placeholder={t('qty_seed_placeholder')}
                         className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
@@ -503,7 +511,7 @@ export default function RecipeStep({
                         priceFormat={step.seed2PriceFormat}
                         onPriceChange={(v) => handleFieldChange('seed2Price', v)}
                         onFormatChange={(v) => handleFieldChange('seed2PriceFormat', v)}
-                        placeholder="Harga"
+                        placeholder={t('common_price')}
                       />
                     </div>
                   </div>
@@ -518,7 +526,7 @@ export default function RecipeStep({
                     <div key={extra.id} className="p-2.5 bg-gray-700/30 border border-gray-650/50 rounded-lg space-y-2 animate-fade-in">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-semibold text-emerald-400 text-[11px]">
-                          Tambahan #{idx + 1}
+                          {t('extra_batch_title')} #{idx + 1}
                         </span>
                         <div className="flex items-center gap-2">
                           {extraCost > 0 && (
@@ -540,7 +548,7 @@ export default function RecipeStep({
                               })
                             }
                             className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
-                            title="Hapus batch ini"
+                            title={t('common_delete')}
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
                           </button>
@@ -551,7 +559,7 @@ export default function RecipeStep({
                           type="number"
                           value={extra.qty || ''}
                           onChange={(e) => handleUpdateSeed2Extra(extra.id, 'qty', parseInt(e.target.value) || 0)}
-                          placeholder="Jumlah seed"
+                          placeholder={t('qty_seed_placeholder')}
                           className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
                         <PriceInput
@@ -559,7 +567,7 @@ export default function RecipeStep({
                           priceFormat={extra.priceFormat || 'perWL'}
                           onPriceChange={(v) => handleUpdateSeed2Extra(extra.id, 'price', v)}
                           onFormatChange={(v) => handleUpdateSeed2Extra(extra.id, 'priceFormat', v)}
-                          placeholder="Harga"
+                          placeholder={t('common_price')}
                         />
                       </div>
                     </div>
@@ -573,7 +581,7 @@ export default function RecipeStep({
                   className="w-full py-1.5 px-2 bg-gray-700/30 hover:bg-gray-700/60 border border-dashed border-gray-600 text-gray-400 hover:text-emerald-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <FiPlus className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>+ Tambah Pembelian Seed 2</span>
+                  <span>{t('add_purchase_batch')} (Seed 2)</span>
                 </button>
               </div>
 
@@ -581,7 +589,7 @@ export default function RecipeStep({
               {(totalSeed2Qty > 0 || totalSeed2Cost > 0) && (
                 <div className="pt-2 border-t border-gray-700/70 flex items-center justify-between text-xs">
                   <span className="text-gray-300">
-                    Total: <strong className="text-white">{formatNumber(totalSeed2Qty)} seeds</strong>
+                    {t('common_total')}: <strong className="text-white">{formatNumberLocalized(totalSeed2Qty)} {t('common_seeds')}</strong>
                   </span>
                   <span className="text-yellow-400 font-bold">
                     {fmtWL(totalSeed2Cost)} WL
@@ -601,7 +609,7 @@ export default function RecipeStep({
                 <ItemSearch
                   value={step.resultItemName}
                   onChange={(item) => handleItemSelect('resultItemName', item)}
-                  placeholder="Hasil Splicing (Cari Item)..."
+                  placeholder={t('splicing_result_header')}
                 />
               </div>
               {step.resultItemName && (
@@ -612,10 +620,10 @@ export default function RecipeStep({
             {results.seedsAfterHarvest > 0 && (
               <div className="flex items-center justify-between pt-2 border-t border-gray-700/50 text-xs">
                 <span className="text-gray-400 font-medium">
-                  Estimasi Seed Didapat (After Break):
+                  {t('estimated_seeds_harvest')}
                 </span>
                 <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                  {formatNumber(results.seedsAfterHarvest)} seeds
+                  {formatNumberLocalized(results.seedsAfterHarvest)} {t('common_seeds')}
                 </span>
               </div>
             )}
@@ -625,14 +633,14 @@ export default function RecipeStep({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium text-gray-400">Pohon Ditanam</label>
+                <label className="text-xs font-medium text-gray-400">{t('trees_planted_label')}</label>
                 {totalSeed1Qty > 0 && totalSeed2Qty > 0 && !step.seedsPlanted && (
                   <button
                     type="button"
                     onClick={() => handleFieldChange('seedsPlanted', Math.min(totalSeed1Qty, totalSeed2Qty))}
                     className="text-[10px] text-emerald-400 hover:underline"
                   >
-                    Max: {formatNumber(Math.min(totalSeed1Qty, totalSeed2Qty))}
+                    Max: {formatNumberLocalized(Math.min(totalSeed1Qty, totalSeed2Qty))}
                   </button>
                 )}
               </div>
@@ -646,7 +654,7 @@ export default function RecipeStep({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Seed Loss (%)</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('seed_loss_label')}</label>
               <input
                 type="number"
                 value={step.seedLossPercent || ''}
@@ -657,7 +665,7 @@ export default function RecipeStep({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Hits / Block</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('hits_per_block_label')}</label>
               <input
                 type="number"
                 value={step.hitsPerBlock || ''}
@@ -671,10 +679,10 @@ export default function RecipeStep({
           {/* Fuel Pack Card */}
           <div className="p-3 bg-gray-750/30 rounded-xl border border-gray-700/60 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-300">Fuel Pack</span>
+              <span className="text-xs font-semibold text-gray-300">{t('fuel_pack_title')}</span>
               {fuelCost > 0 && (
                 <span className="text-xs text-yellow-400 font-semibold">
-                  Biaya Fuel: {fmtWL(fuelCost)} WL
+                  {t('fuel_cost_label')} {fmtWL(fuelCost)} WL
                 </span>
               )}
             </div>
@@ -684,7 +692,7 @@ export default function RecipeStep({
                   type="number"
                   value={step.fuelNeeded || ''}
                   onChange={(e) => handleFieldChange('fuelNeeded', parseInt(e.target.value) || 0)}
-                  placeholder="Jumlah Fuel Pack"
+                  placeholder={t('fuel_qty_placeholder')}
                   className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
@@ -700,7 +708,7 @@ export default function RecipeStep({
                     });
                   }}
                   onFormatChange={(v) => handleFieldChange('fuelPriceFormat', v)}
-                  placeholder="Harga Fuel"
+                  placeholder={t('fuel_price_placeholder')}
                 />
               </div>
             </div>
@@ -711,7 +719,7 @@ export default function RecipeStep({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FiCpu className="w-4 h-4 text-blue-400" />
-                <span className="text-xs font-semibold text-white">Tesseract Manipulator</span>
+                <span className="text-xs font-semibold text-white">{t('tm_title')}</span>
               </div>
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
@@ -720,7 +728,7 @@ export default function RecipeStep({
                   onChange={(e) => handleFieldChange('useTM', e.target.checked)}
                   className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500 cursor-pointer"
                 />
-                <span className="text-xs text-gray-300">Gunakan TM</span>
+                <span className="text-xs text-gray-300">{t('tm_use_checkbox')}</span>
               </label>
             </div>
 
@@ -729,7 +737,7 @@ export default function RecipeStep({
                 {/* TM Configuration Inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">Jumlah TM</label>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">{t('tm_count_label')}</label>
                     <input
                       type="number"
                       value={step.tmCount || ''}
@@ -740,7 +748,7 @@ export default function RecipeStep({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">Rasio (Block per Tree)</label>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">{t('tm_ratio_label')}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -757,21 +765,21 @@ export default function RecipeStep({
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     {/* Block Card */}
                     <div className="p-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                      <span className="text-[11px] text-yellow-300 font-medium block mb-0.5">Estimasi Block</span>
+                      <span className="text-[11px] text-yellow-300 font-medium block mb-0.5">{t('tm_est_blocks')}</span>
                       <p className="text-base font-bold text-yellow-400">
-                        {formatNumber(results.tmEstimatedBlocks)}
+                        {formatNumberLocalized(results.tmEstimatedBlocks)} {t('common_blocks')}
                       </p>
                       <span className="text-[10px] text-gray-400 block mt-0.5">
-                        ≈ {formatNumber(Math.ceil(results.tmEstimatedBlocks / (step.tmCount || 1)))} / TM
+                        ≈ {formatNumberLocalized(Math.ceil(results.tmEstimatedBlocks / (step.tmCount || 1)))} / TM
                       </span>
                     </div>
 
                     {/* Gems Card */}
                     <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-lg flex flex-col justify-between">
                       <div>
-                        <span className="text-[11px] text-cyan-300 font-medium block mb-0.5">Kebutuhan Gems</span>
+                        <span className="text-[11px] text-cyan-300 font-medium block mb-0.5">{t('tm_gems_needed')}</span>
                         <p className="text-base font-bold text-cyan-400">
-                          {formatNumber(results.tmGemsNeeded)}
+                          {formatNumberLocalized(results.tmGemsNeeded)} {t('common_gems')}
                         </p>
                       </div>
                       {step.tmGemsAmount !== results.tmGemsNeeded && (
@@ -780,7 +788,7 @@ export default function RecipeStep({
                           onClick={() => handleFieldChange('tmGemsAmount', results.tmGemsNeeded)}
                           className="mt-1 px-2 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[10px] font-medium transition-colors w-fit"
                         >
-                          ➔ Salin ke Modal
+                          {t('tm_copy_to_modal')}
                         </button>
                       )}
                     </div>
@@ -788,13 +796,13 @@ export default function RecipeStep({
                     {/* Break Time Card */}
                     <div className="p-2.5 bg-purple-500/10 border border-purple-500/20 rounded-lg">
                       <span className="text-[11px] text-purple-300 font-medium flex items-center gap-1 mb-0.5">
-                        <FiClock className="w-3 h-3 text-purple-400" /> Waktu Break TM
+                        <FiClock className="w-3 h-3 text-purple-400" /> {t('tm_break_time')}
                       </span>
                       <p className="text-sm font-bold text-purple-300">
-                        {results.tmBreakTime?.formatted || '0 detik'}
+                        {formattedBreakTime}
                       </p>
                       <span className="text-[10px] text-gray-400 block mt-0.5">
-                        {step.tmCount || 1} TM paralel
+                        {step.tmCount || 1} {t('tm_parallel_suffix')}
                       </span>
                     </div>
                   </div>
@@ -803,7 +811,7 @@ export default function RecipeStep({
                 {/* Modal Beli Gems */}
                 <div className="pt-2 border-t border-gray-700/60 space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-gray-300">Modal Gems TM</span>
+                    <span className="font-semibold text-gray-300">{t('tm_modal_title')}</span>
                     {step.tmGemsCostWL > 0 && (
                       <span className="text-yellow-400 font-semibold">
                         {fmtWL(step.tmGemsCostWL)} WL
@@ -816,7 +824,7 @@ export default function RecipeStep({
                         type="number"
                         value={step.tmGemsAmount || ''}
                         onChange={(e) => handleFieldChange('tmGemsAmount', parseInt(e.target.value) || 0)}
-                        placeholder="Jumlah Gems"
+                        placeholder={t('tm_gems_amount_placeholder')}
                         className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
@@ -825,7 +833,7 @@ export default function RecipeStep({
                         type="number"
                         value={step.tmGemsCostWL || ''}
                         onChange={(e) => handleFieldChange('tmGemsCostWL', parseFloat(e.target.value) || 0)}
-                        placeholder="Biaya (WL)"
+                        placeholder={t('tm_gems_wl_placeholder')}
                         className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
@@ -839,11 +847,11 @@ export default function RecipeStep({
           {step.seedsPlanted > 0 && (
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="p-3 bg-gray-750/50 rounded-xl border border-gray-700/60 text-center">
-                <span className="text-[11px] text-gray-400 block mb-0.5">Seed Sisa (After Break)</span>
-                <span className="text-base font-bold text-emerald-400">{formatNumber(results.seedsAfterHarvest)}</span>
+                <span className="text-[11px] text-gray-400 block mb-0.5">{t('step_remaining_seeds')}</span>
+                <span className="text-base font-bold text-emerald-400">{formatNumberLocalized(results.seedsAfterHarvest)}</span>
               </div>
               <div className="p-3 bg-gray-750/50 rounded-xl border border-gray-700/60 text-center">
-                <span className="text-[11px] text-gray-400 block mb-0.5">Biaya Step</span>
+                <span className="text-[11px] text-gray-400 block mb-0.5">{t('step_cost')}</span>
                 <span className="text-base font-bold text-red-400">{fmtWL(results.totalCostWL)} WL</span>
               </div>
             </div>
@@ -851,12 +859,12 @@ export default function RecipeStep({
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">Catatan</label>
+            <label className="block text-xs font-medium text-gray-400 mb-1">{t('step_notes_label')}</label>
             <input
               type="text"
               value={step.notes}
               onChange={(e) => handleFieldChange('notes', e.target.value)}
-              placeholder="Catatan opsional..."
+              placeholder={t('step_notes_placeholder')}
               className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
@@ -876,10 +884,10 @@ export default function RecipeStep({
             }
           }
         }}
-        title="Hapus Batch Pembelian?"
-        message={`Apakah Anda yakin ingin menghapus Tambahan #${extraToDelete?.index} (${formatNumber(extraToDelete?.qty || 0)} seeds @ ${extraToDelete?.price || 0} ${extraToDelete?.priceFormat === 'each' ? 'WL each' : '/ WL'}) untuk ${extraToDelete?.seedName || 'seed ini'}?`}
-        confirmText="Ya, Hapus"
-        cancelText="Batal"
+        title={t('confirm_delete_batch_title')}
+        message={`${t('confirm_delete_batch_msg')} (${extraToDelete?.qty || 0} seeds @ ${extraToDelete?.price || 0} ${extraToDelete?.priceFormat === 'each' ? 'WL each' : '/ WL'})?`}
+        confirmText={t('common_yes_delete')}
+        cancelText={t('common_cancel')}
       />
     </div>
   );

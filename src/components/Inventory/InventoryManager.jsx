@@ -3,10 +3,12 @@ import { useInventory } from '../../hooks/useLocalStorage';
 import ItemSearch from '../Common/ItemSearch';
 import ItemIcon from '../Common/ItemIcon';
 import ConfirmModal from '../Common/ConfirmModal';
-import { formatNumber, fmtWL } from '../../utils/calculations';
-import { FiPlus, FiTrash2, FiEdit3, FiShoppingCart, FiPackage, FiDollarSign, FiFilter, FiX, FiCheck, FiArrowDown, FiArrowUp } from 'react-icons/fi';
+import { fmtWL } from '../../utils/calculations';
+import { useLanguage } from '../../i18n/LanguageContext';
+import { FiPlus, FiTrash2, FiEdit3, FiShoppingCart, FiPackage, FiDollarSign, FiX, FiCheck, FiArrowDown, FiArrowUp } from 'react-icons/fi';
 
 export default function InventoryManager() {
+  const { t, formatNumberLocalized, language } = useLanguage();
   const { items, transactions, addTransaction, removeItem, updateItem, removeTransaction, getTotalAssetValue } = useInventory();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -21,7 +23,7 @@ export default function InventoryManager() {
     itemName: '',
     quantity: 0,
     price: 0,
-    priceFormat: 'perWL', // 'perWL' or 'each'
+    priceFormat: 'perWL',
     icon: '',
     notes: '',
   });
@@ -71,30 +73,30 @@ export default function InventoryManager() {
     <div className="space-y-6 animate-fade-in">
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <FiPackage className="w-5 h-5 text-blue-400" />
-            <span className="text-sm text-gray-400">Total Item</span>
+            <span className="text-xs font-semibold text-gray-400">{t('inv_total_items')}</span>
           </div>
-          <p className="text-2xl font-bold text-white">{items.length}</p>
-          <p className="text-xs text-gray-500">{formatNumber(items.reduce((s, i) => s + i.quantity, 0))} total unit</p>
+          <p className="text-xl sm:text-2xl font-bold text-white">{items.length}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{formatNumberLocalized(items.reduce((s, i) => s + i.quantity, 0))} {t('inv_total_units')}</p>
         </div>
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <FiDollarSign className="w-5 h-5 text-green-400" />
-            <span className="text-sm text-gray-400">Total Aset (est.)</span>
+            <FiDollarSign className="w-5 h-5 text-emerald-400" />
+            <span className="text-xs font-semibold text-gray-400">{t('inv_total_asset')}</span>
           </div>
-          <p className="text-2xl font-bold text-green-400">{fmtWL(totalAsset)} WL</p>
-          <p className="text-xs text-gray-500">Berdasarkan harga beli</p>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-400">{fmtWL(totalAsset)} WL</p>
+          <p className="text-xs text-gray-500 mt-0.5">{t('inv_based_on_buy')}</p>
         </div>
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <FiShoppingCart className="w-5 h-5 text-yellow-400" />
-            <span className="text-sm text-gray-400">Total Transaksi</span>
+            <span className="text-xs font-semibold text-gray-400">{t('inv_total_transactions')}</span>
           </div>
-          <p className="text-2xl font-bold text-white">{transactions.length}</p>
-          <p className="text-xs text-gray-500">
-            {transactions.filter(t => t.type === 'buy').length} beli • {transactions.filter(t => t.type === 'sell').length} jual • {transactions.filter(t => t.type === 'use').length} pakai
+          <p className="text-xl sm:text-2xl font-bold text-white">{transactions.length}</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {transactions.filter(tItem => tItem.type === 'buy').length} {t('inv_filter_buy').toLowerCase()} • {transactions.filter(tItem => tItem.type === 'sell').length} {t('inv_filter_sell').toLowerCase()} • {transactions.filter(tItem => tItem.type === 'use').length} {t('inv_filter_use').toLowerCase()}
           </p>
         </div>
       </div>
@@ -104,34 +106,34 @@ export default function InventoryManager() {
         {/* Inventory List */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <FiPackage className="text-blue-400" />
-              Inventori
+              {t('inv_title')}
             </h2>
             <div className="flex items-center gap-2">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-2 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none"
+                className="px-2.5 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-xs text-white focus:outline-none"
               >
-                <option value="name">Sort: Nama</option>
-                <option value="quantity">Sort: Jumlah</option>
-                <option value="value">Sort: Nilai</option>
+                <option value="name">{t('inv_sort_name')}</option>
+                <option value="quantity">{t('inv_sort_qty')}</option>
+                <option value="value">{t('inv_sort_value')}</option>
               </select>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
               >
-                <FiPlus className="w-4 h-4" /> Transaksi
+                <FiPlus className="w-3.5 h-3.5" /> {t('inv_btn_transaction')}
               </button>
             </div>
           </div>
 
           {sortedItems.length === 0 ? (
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center">
-              <FiPackage className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">Inventori kosong</p>
-              <p className="text-sm text-gray-500 mt-1">Tambahkan transaksi beli untuk memulai</p>
+            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-8 text-center space-y-1">
+              <FiPackage className="w-10 h-10 text-gray-600 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-gray-300">{t('inv_empty_title')}</p>
+              <p className="text-xs text-gray-500">{t('inv_empty_desc')}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -141,18 +143,18 @@ export default function InventoryManager() {
                   : 0;
                 return (
                   <div key={item.id} className="bg-gray-800 border border-gray-700 rounded-xl p-3 flex items-center gap-3">
-                    <ItemIcon name={item.icon || item.name} size={40} />
+                    <ItemIcon name={item.icon || item.name} size={38} className="rounded-lg shadow shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white truncate">{item.name}</p>
                       <div className="flex items-center gap-3 text-xs text-gray-400">
-                        <span>Qty: <span className="text-white font-medium">{formatNumber(item.quantity)}</span></span>
+                        <span>{t('common_qty')}: <span className="text-white font-medium">{formatNumberLocalized(item.quantity)}</span></span>
                         {item.price > 0 && (
-                          <span>Rate: <span className="text-yellow-400">
-                            {item.priceFormat === 'each' ? `${fmtWL(item.price)} WL each` : `${fmtWL(item.price)}/wl`}
+                          <span>{t('inv_rate')} <span className="text-yellow-400">
+                            {item.priceFormat === 'each' ? `${fmtWL(item.price)} ${t('unit_wl_each')}` : `${fmtWL(item.price)}${t('unit_per_wl')}`}
                           </span></span>
                         )}
                         {itemValue > 0 && (
-                          <span>Nilai: <span className="text-green-400">{fmtWL(itemValue)} WL</span></span>
+                          <span>{t('inv_value')} <span className="text-emerald-400 font-semibold">{fmtWL(itemValue)} WL</span></span>
                         )}
                       </div>
                     </div>
@@ -160,13 +162,14 @@ export default function InventoryManager() {
                       <button
                         onClick={() => setEditingItem(item)}
                         className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                        title={t('common_edit')}
                       >
                         <FiEdit3 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setItemToDelete(item)}
                         className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                        title="Hapus item dari inventory"
+                        title={t('common_delete')}
                       >
                         <FiTrash2 className="w-4 h-4" />
                       </button>
@@ -181,39 +184,42 @@ export default function InventoryManager() {
         {/* Transaction Log */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <FiShoppingCart className="text-yellow-400" />
-              Log Transaksi
+              {t('inv_tx_log')}
             </h2>
-            <div className="flex items-center gap-1">
-              {['all', 'buy', 'sell', 'use'].map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    filter === f
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-700 text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {f === 'all' ? 'Semua' : f === 'buy' ? 'Beli' : f === 'sell' ? 'Jual' : 'Pakai'}
-                </button>
-              ))}
+            <div className="flex items-center gap-1 bg-gray-800 p-1 rounded-xl border border-gray-700">
+              {['all', 'buy', 'sell', 'use'].map((f) => {
+                const label = f === 'all' ? t('inv_filter_all') : f === 'buy' ? t('inv_filter_buy') : f === 'sell' ? t('inv_filter_sell') : t('inv_filter_use');
+                return (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                      filter === f
+                        ? 'bg-emerald-600 text-white'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {filteredTransactions.length === 0 ? (
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center">
-              <FiShoppingCart className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">Belum ada transaksi</p>
+            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-8 text-center space-y-1">
+              <FiShoppingCart className="w-10 h-10 text-gray-600 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-gray-300">{t('inv_no_transactions')}</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
               {filteredTransactions.map((tx) => (
                 <div key={tx.id} className="bg-gray-800 border border-gray-700 rounded-xl p-3 flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                     tx.type === 'buy' ? 'bg-red-500/20 text-red-400' :
-                    tx.type === 'sell' ? 'bg-green-500/20 text-green-400' :
+                    tx.type === 'sell' ? 'bg-emerald-500/20 text-emerald-400' :
                     'bg-yellow-500/20 text-yellow-400'
                   }`}>
                     {tx.type === 'buy' ? <FiArrowDown className="w-4 h-4" /> :
@@ -222,27 +228,27 @@ export default function InventoryManager() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase ${
                         tx.type === 'buy' ? 'bg-red-500/20 text-red-400' :
-                        tx.type === 'sell' ? 'bg-green-500/20 text-green-400' :
+                        tx.type === 'sell' ? 'bg-emerald-500/20 text-emerald-400' :
                         'bg-yellow-500/20 text-yellow-400'
                       }`}>
-                        {tx.type === 'buy' ? 'BELI' : tx.type === 'sell' ? 'JUAL' : 'PAKAI'}
+                        {tx.type === 'buy' ? t('inv_filter_buy') : tx.type === 'sell' ? t('inv_filter_sell') : t('inv_filter_use')}
                       </span>
-                      <span className="text-sm font-medium text-white truncate">{tx.itemName}</span>
+                      <span className="text-sm font-semibold text-white truncate">{tx.itemName}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
-                      <span>x{formatNumber(tx.quantity)}</span>
-                      {tx.price > 0 && <span>{tx.priceFormat === 'each' ? `${fmtWL(tx.price)} WL each` : `${fmtWL(tx.price)}/wl`}</span>}
-                      {tx.totalWL > 0 && <span className="text-yellow-400">{fmtWL(tx.totalWL)} WL</span>}
-                      <span>{new Date(tx.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>x{formatNumberLocalized(tx.quantity)}</span>
+                      {tx.price > 0 && <span>{tx.priceFormat === 'each' ? `${fmtWL(tx.price)} ${t('unit_wl_each')}` : `${fmtWL(tx.price)}${t('unit_per_wl')}`}</span>}
+                      {tx.totalWL > 0 && <span className="text-yellow-400 font-semibold">{fmtWL(tx.totalWL)} WL</span>}
+                      <span>{new Date(tx.date).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     {tx.notes && <p className="text-xs text-gray-500 mt-0.5">{tx.notes}</p>}
                   </div>
                   <button
                     onClick={() => setTxToDelete(tx)}
                     className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                    title="Hapus riwayat transaksi ini"
+                    title={t('common_delete')}
                   >
                     <FiTrash2 className="w-3.5 h-3.5" />
                   </button>
@@ -255,11 +261,11 @@ export default function InventoryManager() {
 
       {/* Add Transaction Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 space-y-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Tambah Transaksi</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white p-1">
+              <h2 className="text-base sm:text-lg font-bold text-white">{t('inv_modal_tx_title')}</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white p-1 rounded-lg">
                 <FiX className="w-5 h-5" />
               </button>
             </div>
@@ -267,21 +273,19 @@ export default function InventoryManager() {
             {/* Type Selector */}
             <div className="flex gap-2">
               {[
-                { value: 'buy', label: 'Beli', color: 'red' },
-                { value: 'sell', label: 'Jual', color: 'green' },
-                { value: 'use', label: 'Pakai', color: 'yellow' },
+                { value: 'buy', label: t('inv_filter_buy'), color: '#dc2626' },
+                { value: 'sell', label: t('inv_filter_sell'), color: '#10b981' },
+                { value: 'use', label: t('inv_filter_use'), color: '#f59e0b' },
               ].map(({ value, label, color }) => (
                 <button
                   key={value}
                   onClick={() => setTxForm(prev => ({ ...prev, type: value }))}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     txForm.type === value
-                      ? `bg-${color}-600 text-white`
+                      ? 'text-white shadow-sm'
                       : 'bg-gray-700 text-gray-400 hover:text-white'
                   }`}
-                  style={txForm.type === value ? {
-                    backgroundColor: color === 'red' ? '#dc2626' : color === 'green' ? '#16a34a' : '#ca8a04'
-                  } : {}}
+                  style={txForm.type === value ? { backgroundColor: color } : {}}
                 >
                   {label}
                 </button>
@@ -290,67 +294,62 @@ export default function InventoryManager() {
 
             {/* Item Search */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Nama Item</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('tracker_modal_item_label')}</label>
               <ItemSearch
                 value={txForm.itemName}
                 onChange={handleItemSelect}
-                placeholder="Cari item..."
+                placeholder={t('common_search')}
               />
             </div>
 
             {/* Quantity */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Jumlah</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('common_qty')}</label>
               <input
                 type="number"
                 value={txForm.quantity || ''}
                 onChange={(e) => setTxForm(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
                 placeholder="0"
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
 
             {/* Price */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Harga</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('common_price')}</label>
               <div className="flex gap-2">
                 <input
                   type="number"
                   value={txForm.price || ''}
                   onChange={(e) => setTxForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                  placeholder={txForm.priceFormat === 'perWL' ? 'Contoh: 200' : 'Contoh: 3'}
-                  className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder={txForm.priceFormat === 'perWL' ? '200' : '3'}
+                  className="flex-1 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
                 <select
                   value={txForm.priceFormat}
                   onChange={(e) => setTxForm(prev => ({ ...prev, priceFormat: e.target.value }))}
-                  className="px-2 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none min-w-[110px]"
+                  className="px-2 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-xs text-white focus:outline-none min-w-[95px]"
                 >
-                  <option value="perWL">qty / WL</option>
-                  <option value="each">WL each</option>
+                  <option value="perWL">{t('unit_per_wl')}</option>
+                  <option value="each">{t('unit_wl_each')}</option>
                 </select>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {txForm.priceFormat === 'perWL'
-                  ? 'Contoh: 200/wl berarti 200 item per 1 WL'
-                  : 'Contoh: 3 WL each berarti 1 item = 3 WL'}
-              </p>
               {txForm.price > 0 && txForm.quantity > 0 && (
                 <p className="text-xs text-yellow-400 mt-1">
-                  Total: {fmtWL(calcTxTotal())} WL
+                  {t('common_total')}: {fmtWL(calcTxTotal())} WL
                 </p>
               )}
             </div>
 
             {/* Notes */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Catatan (opsional)</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('step_notes_label')}</label>
               <input
                 type="text"
                 value={txForm.notes}
                 onChange={(e) => setTxForm(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Misal: Beli dari BUYDIRT"
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder={t('step_notes_placeholder')}
+                className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
 
@@ -358,10 +357,10 @@ export default function InventoryManager() {
             <button
               onClick={handleAddTransaction}
               disabled={!txForm.itemName || txForm.quantity <= 0}
-              className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
               <FiCheck className="w-4 h-4" />
-              Tambah Transaksi
+              {t('inv_modal_tx_title')}
             </button>
           </div>
         </div>
@@ -369,41 +368,41 @@ export default function InventoryManager() {
 
       {/* Edit Item Modal */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 space-y-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Edit {editingItem.name}</h2>
-              <button onClick={() => setEditingItem(null)} className="text-gray-400 hover:text-white p-1">
+              <h2 className="text-base sm:text-lg font-bold text-white">{t('common_edit')} {editingItem.name}</h2>
+              <button onClick={() => setEditingItem(null)} className="text-gray-400 hover:text-white p-1 rounded-lg">
                 <FiX className="w-5 h-5" />
               </button>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Jumlah</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('common_qty')}</label>
               <input
                 type="number"
                 value={editingItem.quantity || ''}
                 onChange={(e) => setEditingItem(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Harga</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('common_price')}</label>
               <div className="flex gap-2">
                 <input
                   type="number"
                   value={editingItem.price || ''}
                   onChange={(e) => setEditingItem(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                  className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
                 <select
                   value={editingItem.priceFormat || 'perWL'}
                   onChange={(e) => setEditingItem(prev => ({ ...prev, priceFormat: e.target.value }))}
-                  className="px-2 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none min-w-[110px]"
+                  className="px-2 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-xs text-white focus:outline-none min-w-[95px]"
                 >
-                  <option value="perWL">qty / WL</option>
-                  <option value="each">WL each</option>
+                  <option value="perWL">{t('unit_per_wl')}</option>
+                  <option value="each">{t('unit_wl_each')}</option>
                 </select>
               </div>
             </div>
@@ -417,10 +416,10 @@ export default function InventoryManager() {
                 });
                 setEditingItem(null);
               }}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
               <FiCheck className="w-4 h-4" />
-              Simpan Perubahan
+              {t('common_save')}
             </button>
           </div>
         </div>
@@ -436,10 +435,10 @@ export default function InventoryManager() {
             setItemToDelete(null);
           }
         }}
-        title={`Hapus Item "${itemToDelete?.name}"?`}
-        message={`Item ini beserta jumlah stoknya (${formatNumber(itemToDelete?.quantity || 0)}) akan dihapus dari inventory.`}
-        confirmText="Ya, Hapus Item"
-        cancelText="Batal"
+        title={`${t('confirm_delete_inv_title')} ("${itemToDelete?.name}")`}
+        message={`${t('confirm_delete_inv_msg')} (${formatNumberLocalized(itemToDelete?.quantity || 0)})`}
+        confirmText={t('common_yes_delete')}
+        cancelText={t('common_cancel')}
       />
 
       {/* Modal Konfirmasi Hapus Transaksi */}
@@ -452,12 +451,11 @@ export default function InventoryManager() {
             setTxToDelete(null);
           }
         }}
-        title="Hapus Riwayat Transaksi?"
-        message={`Apakah Anda yakin ingin menghapus catatan transaksi ${txToDelete?.type?.toUpperCase()} untuk "${txToDelete?.itemName}"?`}
-        confirmText="Ya, Hapus Log"
-        cancelText="Batal"
+        title={t('confirm_delete_tx_title')}
+        message={`${t('confirm_delete_tx_msg')} (${txToDelete?.itemName})`}
+        confirmText={t('common_yes_delete')}
+        cancelText={t('common_cancel')}
       />
     </div>
   );
 }
-
