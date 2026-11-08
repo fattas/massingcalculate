@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ItemSearch from '../Common/ItemSearch';
 import ItemIcon from '../Common/ItemIcon';
 import ConfirmModal from '../Common/ConfirmModal';
+import NumericInput from '../Common/NumericInput';
 import { calculateStep, fmtWL } from '../../utils/calculations';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { FiTrash2, FiChevronDown, FiChevronUp, FiCpu, FiPlus, FiClock, FiCopy, FiCheck, FiArrowRight } from 'react-icons/fi';
@@ -11,10 +12,10 @@ function PriceInput({ price, priceFormat, onPriceChange, onFormatChange, placeho
   return (
     <div className="flex gap-1.5 items-center">
       <div className="flex-1 min-w-[70px]">
-        <input
-          type="number"
-          value={price || ''}
-          onChange={(e) => onPriceChange(parseFloat(e.target.value) || 0)}
+        <NumericInput
+          value={price}
+          onChange={(v) => onPriceChange(v)}
+          allowDecimal={true}
           placeholder={placeholder || t('common_price')}
           className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
         />
@@ -357,10 +358,11 @@ export default function RecipeStep({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <input
-                        type="number"
-                        value={step.seed1Qty || ''}
-                        onChange={(e) => handleFieldChange('seed1Qty', parseInt(e.target.value) || 0)}
+                      <NumericInput
+                        value={step.seed1Qty}
+                        onChange={(v) => handleFieldChange('seed1Qty', v)}
+                        allowDecimal={false}
+                        min={0}
                         placeholder={t('qty_seed_placeholder')}
                         className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
@@ -415,10 +417,11 @@ export default function RecipeStep({
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          value={extra.qty || ''}
-                          onChange={(e) => handleUpdateSeed1Extra(extra.id, 'qty', parseInt(e.target.value) || 0)}
+                        <NumericInput
+                          value={extra.qty}
+                          onChange={(v) => handleUpdateSeed1Extra(extra.id, 'qty', v)}
+                          allowDecimal={false}
+                          min={0}
                           placeholder={t('qty_seed_placeholder')}
                           className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
@@ -497,10 +500,11 @@ export default function RecipeStep({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <input
-                        type="number"
-                        value={step.seed2Qty || ''}
-                        onChange={(e) => handleFieldChange('seed2Qty', parseInt(e.target.value) || 0)}
+                      <NumericInput
+                        value={step.seed2Qty}
+                        onChange={(v) => handleFieldChange('seed2Qty', v)}
+                        allowDecimal={false}
+                        min={0}
                         placeholder={t('qty_seed_placeholder')}
                         className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
@@ -555,10 +559,11 @@ export default function RecipeStep({
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          value={extra.qty || ''}
-                          onChange={(e) => handleUpdateSeed2Extra(extra.id, 'qty', parseInt(e.target.value) || 0)}
+                        <NumericInput
+                          value={extra.qty}
+                          onChange={(v) => handleUpdateSeed2Extra(extra.id, 'qty', v)}
+                          allowDecimal={false}
+                          min={0}
                           placeholder={t('qty_seed_placeholder')}
                           className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
@@ -666,10 +671,11 @@ export default function RecipeStep({
 
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1">{t('hits_per_block_label')}</label>
-              <input
-                type="number"
-                value={step.hitsPerBlock || ''}
-                onChange={(e) => handleFieldChange('hitsPerBlock', parseInt(e.target.value) || 1)}
+              <NumericInput
+                value={step.hitsPerBlock}
+                onChange={(v) => handleFieldChange('hitsPerBlock', v)}
+                allowDecimal={false}
+                min={1}
                 placeholder="4"
                 className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
@@ -688,10 +694,11 @@ export default function RecipeStep({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <input
-                  type="number"
-                  value={step.fuelNeeded || ''}
-                  onChange={(e) => handleFieldChange('fuelNeeded', parseInt(e.target.value) || 0)}
+                <NumericInput
+                  value={step.fuelNeeded}
+                  onChange={(v) => handleFieldChange('fuelNeeded', v)}
+                  allowDecimal={false}
+                  min={0}
                   placeholder={t('fuel_qty_placeholder')}
                   className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
@@ -738,22 +745,23 @@ export default function RecipeStep({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1">{t('tm_count_label')}</label>
-                    <input
-                      type="number"
-                      value={step.tmCount || ''}
-                      onChange={(e) => handleFieldChange('tmCount', Math.max(1, parseInt(e.target.value) || 1))}
-                      min="1"
+                    <NumericInput
+                      value={step.tmCount}
+                      onChange={(v) => handleFieldChange('tmCount', v)}
+                      allowDecimal={false}
+                      min={1}
                       placeholder="8"
                       className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1">{t('tm_ratio_label')}</label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <NumericInput
                       value={step.tmBlockMultiplier ?? 2.77}
-                      onChange={(e) => handleFieldChange('tmBlockMultiplier', parseFloat(e.target.value) || 0)}
+                      onChange={(v) => handleFieldChange('tmBlockMultiplier', v)}
+                      allowDecimal={true}
+                      showZero={true}
+                      step={0.01}
                       placeholder="2.77"
                       className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
@@ -820,19 +828,21 @@ export default function RecipeStep({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <input
-                        type="number"
-                        value={step.tmGemsAmount || ''}
-                        onChange={(e) => handleFieldChange('tmGemsAmount', parseInt(e.target.value) || 0)}
+                      <NumericInput
+                        value={step.tmGemsAmount}
+                        onChange={(v) => handleFieldChange('tmGemsAmount', v)}
+                        allowDecimal={false}
+                        min={0}
                         placeholder={t('tm_gems_amount_placeholder')}
                         className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
                     <div>
-                      <input
-                        type="number"
-                        value={step.tmGemsCostWL || ''}
-                        onChange={(e) => handleFieldChange('tmGemsCostWL', parseFloat(e.target.value) || 0)}
+                      <NumericInput
+                        value={step.tmGemsCostWL}
+                        onChange={(v) => handleFieldChange('tmGemsCostWL', v)}
+                        allowDecimal={true}
+                        min={0}
                         placeholder={t('tm_gems_wl_placeholder')}
                         className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />

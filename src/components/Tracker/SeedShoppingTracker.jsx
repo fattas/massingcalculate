@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import TrackerCard from './TrackerCard';
 import ItemSearch from '../Common/ItemSearch';
 import ConfirmModal from '../Common/ConfirmModal';
+import NumericInput from '../Common/NumericInput';
 import { useLocalStorage, useSavedPlans } from '../../hooks/useLocalStorage';
 import { createDefaultPlan } from '../../data/growtopiaItems';
 import { fmtWL, calculateCost } from '../../utils/calculations';
@@ -88,8 +89,8 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
     const newTracker = {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
       name: newItemName.trim(),
-      targetQty: parseInt(newTargetQty) || 2000,
-      defaultPrice: parseFloat(newDefaultPrice) || 0,
+      targetQty: parseInt(newTargetQty, 10) || 2000,
+      defaultPrice: parseFloat(String(newDefaultPrice).replace(/,/g, '.')) || 0,
       defaultPriceFormat: newPriceFormat || 'perWL',
       purchases: [],
       createdAt: new Date().toISOString(),
@@ -451,10 +452,11 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block font-medium text-gray-400 mb-1">{t('tracker_modal_target_label')}</label>
-                  <input
-                    type="number"
+                  <NumericInput
                     value={newTargetQty}
-                    onChange={(e) => setNewTargetQty(e.target.value)}
+                    onChange={(v, raw) => setNewTargetQty(raw)}
+                    allowDecimal={false}
+                    min={1}
                     placeholder="2000"
                     className="w-full px-2.5 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-emerald-500"
                   />
@@ -462,10 +464,11 @@ export default function SeedShoppingTracker({ onNavigateToPlanner }) {
                 <div>
                   <label className="block font-medium text-gray-400 mb-1">{t('tracker_modal_default_price')}</label>
                   <div className="flex gap-1">
-                    <input
-                      type="number"
+                    <NumericInput
                       value={newDefaultPrice}
-                      onChange={(e) => setNewDefaultPrice(e.target.value)}
+                      onChange={(v, raw) => setNewDefaultPrice(raw)}
+                      allowDecimal={true}
+                      min={0}
                       placeholder="15"
                       className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs"
                     />

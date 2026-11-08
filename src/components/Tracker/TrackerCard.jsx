@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ItemIcon from '../Common/ItemIcon';
 import ItemSearch from '../Common/ItemSearch';
 import ConfirmModal from '../Common/ConfirmModal';
+import NumericInput from '../Common/NumericInput';
 import { fmtWL, calculateCost } from '../../utils/calculations';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { FiTrash2, FiPlus, FiEdit2, FiCheck, FiX, FiSend, FiClock } from 'react-icons/fi';
@@ -53,8 +54,8 @@ export default function TrackerCard({
     onUpdate({
       ...card,
       name: editName,
-      targetQty: parseInt(editTarget) || 0,
-      defaultPrice: parseFloat(editPrice) || 0,
+      targetQty: parseInt(editTarget, 10) || 0,
+      defaultPrice: parseFloat(String(editPrice).replace(/,/g, '.')) || 0,
       defaultPriceFormat: editFormat,
     });
     setIsEditing(false);
@@ -63,10 +64,11 @@ export default function TrackerCard({
   // Handle Add Purchase
   const handleAddPurchase = (e) => {
     if (e) e.preventDefault();
-    const qty = parseInt(inputQty) || 0;
+    const qty = parseInt(inputQty, 10) || 0;
     if (qty <= 0) return;
 
-    const price = parseFloat(inputPrice) || card.defaultPrice || 0;
+    const parsedPrice = parseFloat(String(inputPrice).replace(/,/g, '.'));
+    const price = !isNaN(parsedPrice) && parsedPrice > 0 ? parsedPrice : (card.defaultPrice || 0);
     const format = inputFormat || card.defaultPriceFormat || 'perWL';
 
     const newPurchase = {
@@ -157,10 +159,11 @@ export default function TrackerCard({
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tracker_modal_target_label')}</label>
-                <input
-                  type="number"
-                  value={editTarget || ''}
-                  onChange={(e) => setEditTarget(e.target.value)}
+                <NumericInput
+                  value={editTarget}
+                  onChange={(v, raw) => setEditTarget(raw)}
+                  allowDecimal={false}
+                  min={1}
                   placeholder="2000"
                   className="w-full px-2.5 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-emerald-500"
                 />
@@ -168,10 +171,11 @@ export default function TrackerCard({
               <div>
                 <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tracker_modal_default_price')}</label>
                 <div className="flex gap-1">
-                  <input
-                    type="number"
-                    value={editPrice || ''}
-                    onChange={(e) => setEditPrice(e.target.value)}
+                  <NumericInput
+                    value={editPrice}
+                    onChange={(v, raw) => setEditPrice(raw)}
+                    allowDecimal={true}
+                    min={0}
                     placeholder="3"
                     className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs"
                   />
@@ -297,20 +301,22 @@ export default function TrackerCard({
         <form onSubmit={handleAddPurchase} className="space-y-2">
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
             <div>
-              <input
-                type="number"
+              <NumericInput
                 value={inputQty}
-                onChange={(e) => setInputQty(e.target.value)}
+                onChange={(v, raw) => setInputQty(raw)}
+                allowDecimal={false}
+                min={1}
                 placeholder={t('tracker_add_qty_placeholder')}
                 className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder-gray-500"
               />
             </div>
 
             <div className="flex gap-1">
-              <input
-                type="number"
+              <NumericInput
                 value={inputPrice}
-                onChange={(e) => setInputPrice(e.target.value)}
+                onChange={(v, raw) => setInputPrice(raw)}
+                allowDecimal={true}
+                min={0}
                 placeholder={t('common_price')}
                 className="w-20 px-2 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />

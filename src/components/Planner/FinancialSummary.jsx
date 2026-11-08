@@ -1,6 +1,7 @@
 import { calculateStep, formatCurrency, fmtWL, calculateBEP, formatBEP } from '../../utils/calculations';
 import { useLanguage } from '../../i18n/LanguageContext';
 import FlagIcon from '../Common/FlagIcon';
+import NumericInput from '../Common/NumericInput';
 import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiTarget, FiZap } from 'react-icons/fi';
 import { FaBalanceScale } from 'react-icons/fa';
 
@@ -248,11 +249,11 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold select-none">
             {currentCurrency.symbol}
           </span>
-          <input
-            type="number"
-            step={currentCurrency.decimals > 0 ? "0.01" : "1"}
-            value={activeRate || ''}
-            onChange={(e) => handleRateChange(parseFloat(e.target.value) || 0)}
+          <NumericInput
+            value={activeRate}
+            onChange={(v) => handleRateChange(v)}
+            allowDecimal={true}
+            step={currentCurrency.decimals > 0 ? 0.01 : 1}
             placeholder={currentCurrency.defaultPlaceholder}
             className="w-full pl-9 pr-14 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />

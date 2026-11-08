@@ -40,7 +40,7 @@ export default function LanguageSwitcher({ className = '' }) {
         <div className="absolute right-0 mt-2 w-52 bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl py-1.5 z-50 animate-fade-in backdrop-blur-md">
           <div className="px-3 py-1.5 border-b border-gray-700/80 flex items-center gap-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
             <FiGlobe className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Pilih Bahasa / Language</span>
+            <span>Language</span>
           </div>
 
           <div className="max-h-64 overflow-y-auto py-1 scrollbar-thin scrollbar-thumb-gray-600">
@@ -54,11 +54,10 @@ export default function LanguageSwitcher({ className = '' }) {
                     setLanguage(item.code);
                     setIsOpen(false);
                   }}
-                  className={`w-full px-3 py-2 flex items-center justify-between text-xs transition-colors text-left ${
-                    isSelected
+                  className={`w-full px-3 py-2 flex items-center justify-between text-xs transition-colors text-left ${isSelected
                       ? 'bg-emerald-500/15 text-emerald-400 font-bold'
                       : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <FlagIcon code={item.code} className="w-5 h-3.5" />

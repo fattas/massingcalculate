@@ -3,6 +3,7 @@ import { useInventory } from '../../hooks/useLocalStorage';
 import ItemSearch from '../Common/ItemSearch';
 import ItemIcon from '../Common/ItemIcon';
 import ConfirmModal from '../Common/ConfirmModal';
+import NumericInput from '../Common/NumericInput';
 import { fmtWL } from '../../utils/calculations';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { FiPlus, FiTrash2, FiEdit3, FiShoppingCart, FiPackage, FiDollarSign, FiX, FiCheck, FiArrowDown, FiArrowUp } from 'react-icons/fi';
@@ -305,10 +306,11 @@ export default function InventoryManager() {
             {/* Quantity */}
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1">{t('common_qty')}</label>
-              <input
-                type="number"
-                value={txForm.quantity || ''}
-                onChange={(e) => setTxForm(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+              <NumericInput
+                value={txForm.quantity}
+                onChange={(v) => setTxForm(prev => ({ ...prev, quantity: v }))}
+                allowDecimal={false}
+                min={0}
                 placeholder="0"
                 className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
@@ -318,10 +320,11 @@ export default function InventoryManager() {
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1">{t('common_price')}</label>
               <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={txForm.price || ''}
-                  onChange={(e) => setTxForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                <NumericInput
+                  value={txForm.price}
+                  onChange={(v) => setTxForm(prev => ({ ...prev, price: v }))}
+                  allowDecimal={true}
+                  min={0}
                   placeholder={txForm.priceFormat === 'perWL' ? '200' : '3'}
                   className="flex-1 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
@@ -379,10 +382,11 @@ export default function InventoryManager() {
 
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1">{t('common_qty')}</label>
-              <input
-                type="number"
-                value={editingItem.quantity || ''}
-                onChange={(e) => setEditingItem(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+              <NumericInput
+                value={editingItem.quantity}
+                onChange={(v) => setEditingItem(prev => ({ ...prev, quantity: v }))}
+                allowDecimal={false}
+                min={0}
                 className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
@@ -390,10 +394,11 @@ export default function InventoryManager() {
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1">{t('common_price')}</label>
               <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={editingItem.price || ''}
-                  onChange={(e) => setEditingItem(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                <NumericInput
+                  value={editingItem.price}
+                  onChange={(v) => setEditingItem(prev => ({ ...prev, price: v }))}
+                  allowDecimal={true}
+                  min={0}
                   className="flex-1 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
                 <select
