@@ -58,10 +58,12 @@ export function calculateCost(quantity, price, format) {
 export function calculateStep(step) {
   const {
     seedsPlanted = 0,
+    seedsHarvested = 0,
     seedLossPercent = 21,
     hitsPerBlock = 1,
     tmCount = 1,
     useTM = true,
+    tmHarvestedBlocks = 0,
     seed1Qty = 0,
     seed1Price = 0,
     seed1PriceFormat = 'perWL',
@@ -74,12 +76,27 @@ export function calculateStep(step) {
     fuelPrice = 0,
     fuelPriceFormat = 'perWL',
     fuelCostPerUnit = 0,
+    tmInitialGems = 0,
+    tmRemainingGems = 0,
+    tmFinalGems = 0,
+    tmGemsRate = 0,
     tmGemsAmount = 0,
     tmGemsCostWL = 0,
   } = step;
 
-  const totalTrees = seedsPlanted;
-  const seedsAfterHarvest = calculateSeedsAfterLoss(totalTrees, seedLossPercent);
+  const totalTrees = parseInt(seedsPlanted, 10) || 0;
+
+  // Splicing Output: If user entered seedsHarvested (new inverted logic), use it directly
+  const hasHarvestedInput = seedsHarvested !== undefined && seedsHarvested !== null && seedsHarvested !== '' && parseInt(seedsHarvested, 10) > 0;
+  const seedsAfterHarvest = hasHarvestedInput
+    ? parseInt(seedsHarvested, 10)
+    : (step.seedsHarvested === 0 && (step.seedLossPercent === undefined || step.seedLossPercent === ''))
+      ? 0
+      : calculateSeedsAfterLoss(totalTrees, seedLossPercent);
+
+  const calculatedSeedLossPercent = totalTrees > 0
+    ? parseFloat((((totalTrees - seedsAfterHarvest) / totalTrees) * 100).toFixed(2))
+    : 0;
 
   // Seed 1: Primary + Extra Purchases
   const extraSeed1Purchases = Array.isArray(seed1ExtraPurchases) ? seed1ExtraPurchases : [];
@@ -110,14 +127,38 @@ export function calculateStep(step) {
   const actualFuelPrice = fuelPrice > 0 ? fuelPrice : fuelCostPerUnit;
   const actualFuelFormat = fuelPrice > 0 ? fuelPriceFormat : (fuelCostPerUnit > 0 ? 'each' : fuelPriceFormat);
   const fuelCostWL = calculateCost(fuelNeeded, actualFuelPrice, actualFuelFormat);
-  const actualTmGemsCostWL = useTM ? (parseFloat(tmGemsCostWL) || 0) : 0;
+
+  // TM Gems Calculation: (Initial + Remaining) - Final, then divide by Gems Rate
+  const hasNewGemsWorkflow = tmInitialGems > 0 || tmRemainingGems > 0 || tmFinalGems > 0 || tmGemsRate > 0;
+  let actualTmGemsAmount = 0;
+  let actualTmGemsCostWL = 0;
+
+  if (useTM) {
+    if (hasNewGemsWorkflow) {
+      const initG = parseInt(tmInitialGems, 10) || 0;
+      const remG = parseInt(tmRemainingGems, 10) || 0;
+      const finG = parseInt(tmFinalGems, 10) || 0;
+      const rateG = parseFloat(tmGemsRate) || 0;
+      actualTmGemsAmount = Math.max(0, (initG + remG) - finG);
+      actualTmGemsCostWL = rateG > 0 ? parseFloat((actualTmGemsAmount / rateG).toFixed(4)) : 0;
+    } else {
+      actualTmGemsCostWL = parseFloat(tmGemsCostWL) || 0;
+      actualTmGemsAmount = parseInt(tmGemsAmount, 10) || 0;
+    }
+  }
+
   const totalCostWL = seed1CostWL + seed2CostWL + fuelCostWL + actualTmGemsCostWL;
 
-  // TM Calculations: Estimasi Harvest Block, Gems & Waktu Break
-  const tmBlockMultiplier = step.tmBlockMultiplier !== undefined ? step.tmBlockMultiplier : 2.77;
-  const tmEstimatedBlocks = (seedsPlanted > 0 && tmBlockMultiplier > 0)
-    ? Math.floor(seedsPlanted * tmBlockMultiplier)
-    : 0;
+  // TM Calculations: Total Block (inverted logic) vs Ratio
+  const hasHarvestedBlocks = tmHarvestedBlocks !== undefined && tmHarvestedBlocks !== null && tmHarvestedBlocks !== '' && parseInt(tmHarvestedBlocks, 10) > 0;
+  const tmBlockMultiplier = (totalTrees > 0 && hasHarvestedBlocks)
+    ? parseFloat((parseInt(tmHarvestedBlocks, 10) / totalTrees).toFixed(4))
+    : (step.tmBlockMultiplier !== undefined ? step.tmBlockMultiplier : 2.77);
+
+  const tmEstimatedBlocks = hasHarvestedBlocks
+    ? parseInt(tmHarvestedBlocks, 10)
+    : ((totalTrees > 0 && tmBlockMultiplier > 0) ? Math.floor(totalTrees * tmBlockMultiplier) : 0);
+
   const tmHitsPerBlock = hitsPerBlock || 1;
   const tmGemsNeeded = useTM ? calculateGemsConsumed(tmEstimatedBlocks, tmHitsPerBlock) : 0;
   const tmBreakTime = useTM
@@ -127,16 +168,18 @@ export function calculateStep(step) {
   return {
     totalTrees,
     seedsAfterHarvest,
+    calculatedSeedLossPercent,
     seed1CostWL,
     seed2CostWL,
     totalSeed1Qty,
     totalSeed2Qty,
     fuelCostWL,
     tmEstimatedBlocks,
+    tmBlockMultiplier,
     tmGemsNeeded,
     tmBreakTime,
     tmGemsCostWL: actualTmGemsCostWL,
-    tmGemsAmount: useTM ? (parseInt(tmGemsAmount) || 0) : 0,
+    tmGemsAmount: actualTmGemsAmount,
     totalCostWL,
   };
 }

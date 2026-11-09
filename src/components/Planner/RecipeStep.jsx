@@ -52,6 +52,20 @@ export default function RecipeStep({
     onUpdate({ ...step, [field]: value });
   };
 
+  const handleGemsChange = (field, val) => {
+    const next = { ...step, [field]: val };
+    const init = field === 'tmInitialGems' ? val : (parseInt(step.tmInitialGems, 10) || 0);
+    const rem = field === 'tmRemainingGems' ? val : (parseInt(step.tmRemainingGems, 10) || 0);
+    const fin = field === 'tmFinalGems' ? val : (parseInt(step.tmFinalGems, 10) || 0);
+    const rate = field === 'tmGemsRate' ? val : (parseFloat(step.tmGemsRate) || 0);
+
+    const used = Math.max(0, (init + rem) - fin);
+    const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
+    next.tmGemsAmount = used;
+    next.tmGemsCostWL = cost;
+    onUpdate(next);
+  };
+
   const handleItemSelect = (field, item) => {
     if (item) {
       const updates = { [field]: item.name };
@@ -649,22 +663,37 @@ export default function RecipeStep({
                   </button>
                 )}
               </div>
-              <input
-                type="number"
-                value={step.seedsPlanted || ''}
-                onChange={(e) => handleFieldChange('seedsPlanted', parseInt(e.target.value) || 0)}
+              <NumericInput
+                value={step.seedsPlanted}
+                onChange={(v) => handleFieldChange('seedsPlanted', v)}
+                allowDecimal={false}
+                min={0}
                 placeholder={totalSeed1Qty > 0 && totalSeed2Qty > 0 ? `${Math.min(totalSeed1Qty, totalSeed2Qty)}` : '0'}
                 className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">{t('seed_loss_label')}</label>
-              <input
-                type="number"
-                value={step.seedLossPercent || ''}
-                onChange={(e) => handleFieldChange('seedLossPercent', parseFloat(e.target.value) || 0)}
-                placeholder="21"
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-gray-400">{t('seed_harvested_label')}</label>
+                {step.seedsPlanted > 0 && (step.seedsHarvested > 0 || results.seedsAfterHarvest > 0) && (
+                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
+                    results.calculatedSeedLossPercent > 0
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                  }`}>
+                    {results.calculatedSeedLossPercent > 0
+                      ? t('seed_loss_badge', { percent: results.calculatedSeedLossPercent })
+                      : t('seed_gain_badge', { percent: Math.abs(results.calculatedSeedLossPercent) })}
+                  </span>
+                )}
+              </div>
+              <NumericInput
+                value={step.seedsHarvested}
+                onChange={(v) => handleFieldChange('seedsHarvested', v)}
+                allowDecimal={false}
+                min={0}
+                placeholder={step.seedsPlanted > 0 ? `${Math.floor(step.seedsPlanted * 0.79)}` : t('seed_harvested_placeholder')}
                 className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
@@ -755,14 +784,20 @@ export default function RecipeStep({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">{t('tm_ratio_label')}</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-gray-400">{t('harvested_blocks_label')}</label>
+                      {step.seedsPlanted > 0 && (step.tmHarvestedBlocks > 0 || results.tmBlockMultiplier > 0) && (
+                        <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-1.5 py-0.2 rounded border border-yellow-500/30">
+                          {t('block_ratio_badge', { ratio: results.tmBlockMultiplier })}
+                        </span>
+                      )}
+                    </div>
                     <NumericInput
-                      value={step.tmBlockMultiplier ?? 2.77}
-                      onChange={(v) => handleFieldChange('tmBlockMultiplier', v)}
-                      allowDecimal={true}
-                      showZero={true}
-                      step={0.01}
-                      placeholder="2.77"
+                      value={step.tmHarvestedBlocks}
+                      onChange={(v) => handleFieldChange('tmHarvestedBlocks', v)}
+                      allowDecimal={false}
+                      min={0}
+                      placeholder={step.seedsPlanted > 0 ? `${Math.floor(step.seedsPlanted * 2.77)}` : t('harvested_blocks_placeholder')}
                       className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   </div>
@@ -782,23 +817,15 @@ export default function RecipeStep({
                       </span>
                     </div>
 
-                    {/* Gems Card */}
-                    <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-lg flex flex-col justify-between">
-                      <div>
-                        <span className="text-[11px] text-cyan-300 font-medium block mb-0.5">{t('tm_gems_needed')}</span>
-                        <p className="text-base font-bold text-cyan-400">
-                          {formatNumberLocalized(results.tmGemsNeeded)} {t('common_gems')}
-                        </p>
-                      </div>
-                      {step.tmGemsAmount !== results.tmGemsNeeded && (
-                        <button
-                          type="button"
-                          onClick={() => handleFieldChange('tmGemsAmount', results.tmGemsNeeded)}
-                          className="mt-1 px-2 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[10px] font-medium transition-colors w-fit"
-                        >
-                          {t('tm_copy_to_modal')}
-                        </button>
-                      )}
+                    {/* Gems Card (copy button removed as requested) */}
+                    <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+                      <span className="text-[11px] text-cyan-300 font-medium block mb-0.5">{t('tm_gems_needed')}</span>
+                      <p className="text-base font-bold text-cyan-400">
+                        {formatNumberLocalized(results.tmGemsNeeded)} {t('common_gems')}
+                      </p>
+                      <span className="text-[10px] text-gray-400 block mt-0.5">
+                        {step.hitsPerBlock || 1} hits/block
+                      </span>
                     </div>
 
                     {/* Break Time Card */}
@@ -816,38 +843,73 @@ export default function RecipeStep({
                   </div>
                 )}
 
-                {/* Modal Beli Gems */}
-                <div className="pt-2 border-t border-gray-700/60 space-y-1.5">
+                {/* Modal Gems TM: (Initial + Remaining) - Final / Rate */}
+                <div className="pt-2 border-t border-gray-700/60 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-gray-300">{t('tm_modal_title')}</span>
-                    {step.tmGemsCostWL > 0 && (
-                      <span className="text-yellow-400 font-semibold">
-                        {fmtWL(step.tmGemsCostWL)} WL
+                    {results.tmGemsCostWL > 0 && (
+                      <span className="text-yellow-400 font-semibold bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/25">
+                        {formatNumberLocalized(results.tmGemsAmount)} gems ({fmtWL(results.tmGemsCostWL)} WL)
                       </span>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div>
+                      <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tm_initial_gems_label')}</label>
                       <NumericInput
-                        value={step.tmGemsAmount}
-                        onChange={(v) => handleFieldChange('tmGemsAmount', v)}
+                        value={step.tmInitialGems}
+                        onChange={(v) => handleGemsChange('tmInitialGems', v)}
                         allowDecimal={false}
                         min={0}
-                        placeholder={t('tm_gems_amount_placeholder')}
-                        className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="0"
+                        className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
                     <div>
+                      <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tm_remaining_gems_label')}</label>
                       <NumericInput
-                        value={step.tmGemsCostWL}
-                        onChange={(v) => handleFieldChange('tmGemsCostWL', v)}
+                        value={step.tmRemainingGems}
+                        onChange={(v) => handleGemsChange('tmRemainingGems', v)}
+                        allowDecimal={false}
+                        min={0}
+                        placeholder="0"
+                        className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tm_final_gems_label')}</label>
+                      <NumericInput
+                        value={step.tmFinalGems}
+                        onChange={(v) => handleGemsChange('tmFinalGems', v)}
+                        allowDecimal={false}
+                        min={0}
+                        placeholder="0"
+                        className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tm_gems_rate_label')}</label>
+                      <NumericInput
+                        value={step.tmGemsRate}
+                        onChange={(v) => handleGemsChange('tmGemsRate', v)}
                         allowDecimal={true}
                         min={0}
-                        placeholder={t('tm_gems_wl_placeholder')}
-                        className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder={t('tm_gems_rate_placeholder')}
+                        className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
                   </div>
+
+                  {(step.tmInitialGems > 0 || step.tmRemainingGems > 0 || step.tmFinalGems > 0 || results.tmGemsCostWL > 0) && (
+                    <div className="flex flex-wrap items-center justify-between p-2 bg-gray-750/70 border border-gray-700 rounded-lg text-xs gap-2">
+                      <span className="text-gray-400 text-[11px]">
+                        {t('tm_used_gems_label')}: <strong className="text-cyan-400">{formatNumberLocalized(results.tmGemsAmount)} gems</strong>
+                      </span>
+                      <span className="text-gray-300 text-[11px]">
+                        {t('tm_gems_cost_wl_label')}: <strong className="text-yellow-400 font-bold">{fmtWL(results.tmGemsCostWL)} WL</strong>
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -112,10 +112,12 @@ export function createDefaultStep(overrides = {}) {
     seedName2: '',
     resultItemName: '',
     seedsPlanted: 0,
+    seedsHarvested: 0,
     seedLossPercent: 21,
     hitsPerBlock: 4,
     tmCount: 8,
     useTM: true,
+    tmHarvestedBlocks: 0,
     tmBlockMultiplier: 2.77,
     isCompleted: false,
     isExpanded: true,
@@ -138,7 +140,11 @@ export function createDefaultStep(overrides = {}) {
     fuelPriceFormat: 'perWL',
     fuelCostPerUnit: 0,
 
-    // TM Gems Fuel (manual modal)
+    // TM Gems Fuel (Real workflow: (Initial + Remaining) - Final) / Rate
+    tmInitialGems: 0,
+    tmRemainingGems: 0,
+    tmFinalGems: 0,
+    tmGemsRate: 0,
     tmGemsAmount: 0,
     tmGemsCostWL: 0,
 
@@ -160,6 +166,7 @@ export function createDefaultPlan(overrides = {}) {
     sellPrice: 0,
     sellPriceFormat: 'perWL',
     totalFinalOutput: 0,
+    harvestedBlocks: 0,
     harvestBlockMultiplier: 2.77,
     wlToIdrRate: 0,
     currencyRates: {},

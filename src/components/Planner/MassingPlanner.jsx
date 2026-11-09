@@ -367,10 +367,14 @@ export default function MassingPlanner() {
             const finalStep = stepResults[stepResults.length - 1];
             const finalSplicingSeeds = finalStep ? finalStep.seedsAfterHarvest : 0;
             const finalStepItem = plan.steps[plan.steps.length - 1]?.resultItemName;
-            const multiplier = plan.harvestBlockMultiplier !== undefined ? plan.harvestBlockMultiplier : 2.77;
-            const estimatedHarvestBlocks = finalSplicingSeeds > 0 && multiplier > 0
-              ? Math.floor(finalSplicingSeeds * multiplier)
-              : 0;
+            const hasHarvestedBlocksPlan = plan.harvestedBlocks !== undefined && plan.harvestedBlocks !== null && plan.harvestedBlocks !== '' && parseInt(plan.harvestedBlocks, 10) > 0;
+            const calculatedMultiplier = finalSplicingSeeds > 0 && hasHarvestedBlocksPlan
+              ? parseFloat((parseInt(plan.harvestedBlocks, 10) / finalSplicingSeeds).toFixed(4))
+              : (plan.harvestBlockMultiplier !== undefined ? plan.harvestBlockMultiplier : 2.77);
+
+            const estimatedHarvestBlocks = hasHarvestedBlocksPlan
+              ? parseInt(plan.harvestedBlocks, 10)
+              : (finalSplicingSeeds > 0 && calculatedMultiplier > 0 ? Math.floor(finalSplicingSeeds * calculatedMultiplier) : 0);
             const totalCostWL = stepResults.reduce((sum, r) => sum + r.totalCostWL, 0);
             const effectiveSellOutput = plan.totalFinalOutput > 0 ? plan.totalFinalOutput : finalSplicingSeeds;
             const bep = calculateBEP(totalCostWL, effectiveSellOutput, plan.sellPriceFormat || 'perWL');
@@ -409,16 +413,22 @@ export default function MassingPlanner() {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-gray-400 mb-1">
-                        {t('block_tree_ratio_label')}
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-medium text-gray-400">
+                          {t('final_harvest_blocks_label')}
+                        </label>
+                        {finalSplicingSeeds > 0 && (plan.harvestedBlocks > 0 || calculatedMultiplier > 0) && (
+                          <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-1.5 py-0.2 rounded border border-yellow-500/30">
+                            {t('block_ratio_badge', { ratio: calculatedMultiplier })}
+                          </span>
+                        )}
+                      </div>
                       <NumericInput
-                        value={plan.harvestBlockMultiplier ?? 2.77}
-                        onChange={(v) => updatePlan({ harvestBlockMultiplier: v })}
-                        allowDecimal={true}
-                        showZero={true}
-                        step={0.01}
-                        placeholder="2.77"
+                        value={plan.harvestedBlocks}
+                        onChange={(v) => updatePlan({ harvestedBlocks: v })}
+                        allowDecimal={false}
+                        min={0}
+                        placeholder={finalSplicingSeeds > 0 ? `${Math.floor(finalSplicingSeeds * 2.77)}` : t('harvested_blocks_placeholder')}
                         className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white font-semibold text-xs focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
