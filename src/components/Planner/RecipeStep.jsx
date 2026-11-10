@@ -649,7 +649,7 @@ export default function RecipeStep({
           </div>
 
           {/* Parameters Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium text-gray-400">{t('trees_planted_label')}</label>
@@ -675,6 +675,37 @@ export default function RecipeStep({
 
             <div>
               <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-gray-400">{t('harvested_blocks_label')}</label>
+                {step.seedsPlanted > 0 && (step.tmHarvestedBlocks > 0 || results.tmBlockMultiplier > 0) && (
+                  <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-1.5 py-0.2 rounded border border-yellow-500/30">
+                    {t('block_ratio_badge', { ratio: results.tmBlockMultiplier })}
+                  </span>
+                )}
+              </div>
+              <NumericInput
+                value={step.tmHarvestedBlocks}
+                onChange={(v) => handleFieldChange('tmHarvestedBlocks', v)}
+                allowDecimal={false}
+                min={0}
+                placeholder={step.seedsPlanted > 0 ? `${Math.floor(step.seedsPlanted * 2.77)}` : t('harvested_blocks_placeholder')}
+                className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-yellow-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">{t('hits_per_block_label')}</label>
+              <NumericInput
+                value={step.hitsPerBlock}
+                onChange={(v) => handleFieldChange('hitsPerBlock', v)}
+                allowDecimal={false}
+                min={1}
+                placeholder="4"
+                className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium text-gray-400">{t('seed_harvested_label')}</label>
                 {step.seedsPlanted > 0 && (step.seedsHarvested > 0 || results.seedsAfterHarvest > 0) && (
                   <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
@@ -694,18 +725,6 @@ export default function RecipeStep({
                 allowDecimal={false}
                 min={0}
                 placeholder={step.seedsPlanted > 0 ? `${Math.floor(step.seedsPlanted * 0.79)}` : t('seed_harvested_placeholder')}
-                className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">{t('hits_per_block_label')}</label>
-              <NumericInput
-                value={step.hitsPerBlock}
-                onChange={(v) => handleFieldChange('hitsPerBlock', v)}
-                allowDecimal={false}
-                min={1}
-                placeholder="4"
                 className="w-full px-3 py-2 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
@@ -771,41 +790,21 @@ export default function RecipeStep({
             {step.useTM && (
               <div className="space-y-3 pt-1">
                 {/* TM Configuration Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">{t('tm_count_label')}</label>
-                    <NumericInput
-                      value={step.tmCount}
-                      onChange={(v) => handleFieldChange('tmCount', v)}
-                      allowDecimal={false}
-                      min={1}
-                      placeholder="8"
-                      className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-medium text-gray-400">{t('harvested_blocks_label')}</label>
-                      {step.seedsPlanted > 0 && (step.tmHarvestedBlocks > 0 || results.tmBlockMultiplier > 0) && (
-                        <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-1.5 py-0.2 rounded border border-yellow-500/30">
-                          {t('block_ratio_badge', { ratio: results.tmBlockMultiplier })}
-                        </span>
-                      )}
-                    </div>
-                    <NumericInput
-                      value={step.tmHarvestedBlocks}
-                      onChange={(v) => handleFieldChange('tmHarvestedBlocks', v)}
-                      allowDecimal={false}
-                      min={0}
-                      placeholder={step.seedsPlanted > 0 ? `${Math.floor(step.seedsPlanted * 2.77)}` : t('harvested_blocks_placeholder')}
-                      className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
+                <div className="max-w-xs">
+                  <label className="block text-xs font-medium text-gray-400 mb-1">{t('tm_count_label')}</label>
+                  <NumericInput
+                    value={step.tmCount}
+                    onChange={(v) => handleFieldChange('tmCount', v)}
+                    allowDecimal={false}
+                    min={1}
+                    placeholder="8"
+                    className="w-full px-3 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
                 </div>
 
-                {/* TM Output Stats (Block, Gems, Break Time) */}
+                {/* TM Output Stats (Block & Break Time) */}
                 {results.tmEstimatedBlocks > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {/* Block Card */}
                     <div className="p-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                       <span className="text-[11px] text-yellow-300 font-medium block mb-0.5">{t('tm_est_blocks')}</span>
@@ -814,17 +813,6 @@ export default function RecipeStep({
                       </p>
                       <span className="text-[10px] text-gray-400 block mt-0.5">
                         ≈ {formatNumberLocalized(Math.ceil(results.tmEstimatedBlocks / (step.tmCount || 1)))} / TM
-                      </span>
-                    </div>
-
-                    {/* Gems Card (copy button removed as requested) */}
-                    <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
-                      <span className="text-[11px] text-cyan-300 font-medium block mb-0.5">{t('tm_gems_needed')}</span>
-                      <p className="text-base font-bold text-cyan-400">
-                        {formatNumberLocalized(results.tmGemsNeeded)} {t('common_gems')}
-                      </p>
-                      <span className="text-[10px] text-gray-400 block mt-0.5">
-                        {step.hitsPerBlock || 1} hits/block
                       </span>
                     </div>
 
@@ -847,11 +835,6 @@ export default function RecipeStep({
                 <div className="pt-2 border-t border-gray-700/60 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-gray-300">{t('tm_modal_title')}</span>
-                    {results.tmGemsCostWL > 0 && (
-                      <span className="text-yellow-400 font-semibold bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/25">
-                        {formatNumberLocalized(results.tmGemsAmount)} gems ({fmtWL(results.tmGemsCostWL)} WL)
-                      </span>
-                    )}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div>

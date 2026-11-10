@@ -27,14 +27,10 @@ export default function FinancialSummary({ plan, onUpdatePlan }) {
 
   const finalStep = stepResults[stepResults.length - 1];
   const finalSplicingSeeds = finalStep ? finalStep.seedsAfterHarvest : 0;
-  const hasHarvestedBlocksPlan = plan.harvestedBlocks !== undefined && plan.harvestedBlocks !== null && plan.harvestedBlocks !== '' && parseInt(plan.harvestedBlocks, 10) > 0;
-  const multiplier = finalSplicingSeeds > 0 && hasHarvestedBlocksPlan
-    ? parseFloat((parseInt(plan.harvestedBlocks, 10) / finalSplicingSeeds).toFixed(4))
-    : (plan.harvestBlockMultiplier !== undefined ? plan.harvestBlockMultiplier : 2.77);
-
-  const estimatedHarvestBlocks = hasHarvestedBlocksPlan
-    ? parseInt(plan.harvestedBlocks, 10)
-    : (finalSplicingSeeds > 0 && multiplier > 0 ? Math.floor(finalSplicingSeeds * multiplier) : 0);
+  const finalStepBlocks = finalStep?.tmEstimatedBlocks || 0;
+  const estimatedHarvestBlocks = finalStepBlocks > 0
+    ? finalStepBlocks
+    : (finalSplicingSeeds > 0 ? Math.floor(finalSplicingSeeds * (plan.harvestBlockMultiplier || 2.77)) : 0);
   const effectiveOutput = totalFinalOutput > 0 ? totalFinalOutput : finalSplicingSeeds;
 
   const totalSeedCostWL = totalSeed1CostWL + totalSeed2CostWL;
