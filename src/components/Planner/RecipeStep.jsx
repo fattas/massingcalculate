@@ -649,15 +649,15 @@ export default function RecipeStep({
           </div>
 
           {/* Parameters Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-1 min-h-[22px]">
                 <label className="text-xs font-medium text-gray-400">{t('trees_planted_label')}</label>
                 {totalSeed1Qty > 0 && totalSeed2Qty > 0 && !step.seedsPlanted && (
                   <button
                     type="button"
                     onClick={() => handleFieldChange('seedsPlanted', Math.min(totalSeed1Qty, totalSeed2Qty))}
-                    className="text-[10px] text-emerald-400 hover:underline"
+                    className="text-[10px] text-emerald-400 hover:underline whitespace-nowrap shrink-0"
                   >
                     Max: {formatNumberLocalized(Math.min(totalSeed1Qty, totalSeed2Qty))}
                   </button>
@@ -674,11 +674,11 @@ export default function RecipeStep({
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-1 min-h-[22px]">
                 <label className="text-xs font-medium text-gray-400">{t('harvested_blocks_label')}</label>
                 {step.seedsPlanted > 0 && (step.tmHarvestedBlocks > 0 || results.tmBlockMultiplier > 0) && (
-                  <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-1.5 py-0.2 rounded border border-yellow-500/30">
-                    {t('block_ratio_badge', { ratio: results.tmBlockMultiplier })}
+                  <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/30 whitespace-nowrap shrink-0">
+                    {t('block_ratio_badge', { ratio: parseFloat((results.tmBlockMultiplier || 2.77).toFixed(2)) })}
                   </span>
                 )}
               </div>
@@ -693,7 +693,9 @@ export default function RecipeStep({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">{t('hits_per_block_label')}</label>
+              <div className="flex items-center justify-between mb-1 min-h-[22px]">
+                <label className="text-xs font-medium text-gray-400">{t('hits_per_block_label')}</label>
+              </div>
               <NumericInput
                 value={step.hitsPerBlock}
                 onChange={(v) => handleFieldChange('hitsPerBlock', v)}
@@ -705,10 +707,10 @@ export default function RecipeStep({
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-1 min-h-[22px]">
                 <label className="text-xs font-medium text-gray-400">{t('seed_harvested_label')}</label>
                 {step.seedsPlanted > 0 && (step.seedsHarvested > 0 || results.seedsAfterHarvest > 0) && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border whitespace-nowrap shrink-0 ${
                     results.calculatedSeedLossPercent > 0
                       ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                       : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'

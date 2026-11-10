@@ -152,7 +152,7 @@ export function calculateStep(step) {
   // TM Calculations: Total Block (inverted logic) vs Ratio
   const hasHarvestedBlocks = tmHarvestedBlocks !== undefined && tmHarvestedBlocks !== null && tmHarvestedBlocks !== '' && parseInt(tmHarvestedBlocks, 10) > 0;
   const tmBlockMultiplier = (totalTrees > 0 && hasHarvestedBlocks)
-    ? parseFloat((parseInt(tmHarvestedBlocks, 10) / totalTrees).toFixed(4))
+    ? parseFloat((parseInt(tmHarvestedBlocks, 10) / totalTrees).toFixed(2))
     : (step.tmBlockMultiplier !== undefined ? step.tmBlockMultiplier : 2.77);
 
   const tmEstimatedBlocks = hasHarvestedBlocks
