@@ -128,15 +128,22 @@ export function calculateStep(step) {
   const actualFuelFormat = fuelPrice > 0 ? fuelPriceFormat : (fuelCostPerUnit > 0 ? 'each' : fuelPriceFormat);
   const fuelCostWL = calculateCost(fuelNeeded, actualFuelPrice, actualFuelFormat);
 
-  // TM Gems Calculation: (Initial + Remaining) - Final, then divide by Gems Rate
-  const hasNewGemsWorkflow = tmInitialGems > 0 || tmRemainingGems > 0 || tmFinalGems > 0 || tmGemsRate > 0;
+  // TM Gems Calculation: (Initial + Sum of Remaining from all TMs) - Final, then divide by Gems Rate
+  const tmMachineCount = Math.max(1, Math.min(parseInt(tmCount, 10) || 1, 50));
+  let remG = 0;
+  if (Array.isArray(step.tmRemainingGemsList) && step.tmRemainingGemsList.length > 0) {
+    remG = step.tmRemainingGemsList.slice(0, tmMachineCount).reduce((sum, v) => sum + (parseInt(v, 10) || 0), 0);
+  } else {
+    remG = parseInt(tmRemainingGems, 10) || 0;
+  }
+
+  const hasNewGemsWorkflow = tmInitialGems > 0 || remG > 0 || tmFinalGems > 0 || tmGemsRate > 0;
   let actualTmGemsAmount = 0;
   let actualTmGemsCostWL = 0;
 
   if (useTM) {
     if (hasNewGemsWorkflow) {
       const initG = parseInt(tmInitialGems, 10) || 0;
-      const remG = parseInt(tmRemainingGems, 10) || 0;
       const finG = parseInt(tmFinalGems, 10) || 0;
       const rateG = parseFloat(tmGemsRate) || 0;
       actualTmGemsAmount = Math.max(0, (initG + remG) - finG);
@@ -180,6 +187,7 @@ export function calculateStep(step) {
     tmBreakTime,
     tmGemsCostWL: actualTmGemsCostWL,
     tmGemsAmount: actualTmGemsAmount,
+    tmTotalRemainingGems: remG,
     totalCostWL,
   };
 }

@@ -47,23 +47,79 @@ export default function RecipeStep({
   const [extraToDelete, setExtraToDelete] = useState(null);
 
   const results = calculateStep(step);
+  const tmMachineCount = Math.max(1, Math.min(parseInt(step.tmCount, 10) || 1, 50));
+
+  const remainingGemsList = (() => {
+    if (Array.isArray(step.tmRemainingGemsList)) {
+      return step.tmRemainingGemsList;
+    }
+    if (step.tmRemainingGems !== undefined && step.tmRemainingGems !== null && step.tmRemainingGems !== '') {
+      return [step.tmRemainingGems];
+    }
+    return [];
+  })();
+
+  const totalRemainingGems = remainingGemsList.slice(0, tmMachineCount).reduce((sum, v) => sum + (parseInt(v, 10) || 0), 0);
 
   const handleFieldChange = (field, value) => {
     onUpdate({ ...step, [field]: value });
   };
 
+  const handleTMCountChange = (v) => {
+    const nextCount = Math.max(1, Math.min(parseInt(v, 10) || 1, 50));
+    const nextList = [...remainingGemsList];
+    const sumRemaining = nextList.slice(0, nextCount).reduce((sum, val) => sum + (parseInt(val, 10) || 0), 0);
+
+    const init = parseInt(step.tmInitialGems, 10) || 0;
+    const fin = parseInt(step.tmFinalGems, 10) || 0;
+    const rate = parseFloat(step.tmGemsRate) || 0;
+    const used = Math.max(0, (init + sumRemaining) - fin);
+    const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
+
+    onUpdate({
+      ...step,
+      tmCount: v,
+      tmRemainingGems: sumRemaining,
+      tmGemsAmount: used,
+      tmGemsCostWL: cost,
+    });
+  };
+
   const handleGemsChange = (field, val) => {
     const next = { ...step, [field]: val };
-    const init = field === 'tmInitialGems' ? val : (parseInt(step.tmInitialGems, 10) || 0);
-    const rem = field === 'tmRemainingGems' ? val : (parseInt(step.tmRemainingGems, 10) || 0);
-    const fin = field === 'tmFinalGems' ? val : (parseInt(step.tmFinalGems, 10) || 0);
-    const rate = field === 'tmGemsRate' ? val : (parseFloat(step.tmGemsRate) || 0);
+    const init = field === 'tmInitialGems' ? (parseInt(val, 10) || 0) : (parseInt(step.tmInitialGems, 10) || 0);
+    const rem = totalRemainingGems;
+    const fin = field === 'tmFinalGems' ? (parseInt(val, 10) || 0) : (parseInt(step.tmFinalGems, 10) || 0);
+    const rate = field === 'tmGemsRate' ? (parseFloat(val) || 0) : (parseFloat(step.tmGemsRate) || 0);
 
     const used = Math.max(0, (init + rem) - fin);
     const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
     next.tmGemsAmount = used;
     next.tmGemsCostWL = cost;
     onUpdate(next);
+  };
+
+  const handleRemainingGemsPerTMChange = (index, val) => {
+    const nextList = [...remainingGemsList];
+    while (nextList.length < tmMachineCount) {
+      nextList.push('');
+    }
+    nextList[index] = val;
+    const sumRemaining = nextList.slice(0, tmMachineCount).reduce((sum, v) => sum + (parseInt(v, 10) || 0), 0);
+
+    const init = parseInt(step.tmInitialGems, 10) || 0;
+    const fin = parseInt(step.tmFinalGems, 10) || 0;
+    const rate = parseFloat(step.tmGemsRate) || 0;
+    const used = Math.max(0, (init + sumRemaining) - fin);
+    const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
+
+    onUpdate({
+      ...step,
+      tmRemainingGemsList: nextList,
+      tmRemainingGems: sumRemaining,
+      tmGemsAmount: used,
+      tmGemsCostWL: cost,
+    });
   };
 
   const handleItemSelect = (field, item) => {
@@ -796,7 +852,7 @@ export default function RecipeStep({
                   <label className="block text-xs font-medium text-gray-400 mb-1">{t('tm_count_label')}</label>
                   <NumericInput
                     value={step.tmCount}
-                    onChange={(v) => handleFieldChange('tmCount', v)}
+                    onChange={(v) => handleTMCountChange(v)}
                     allowDecimal={false}
                     min={1}
                     placeholder="8"
@@ -833,28 +889,19 @@ export default function RecipeStep({
                   </div>
                 )}
 
-                {/* Modal Gems TM: (Initial + Remaining) - Final / Rate */}
-                <div className="pt-2 border-t border-gray-700/60 space-y-2">
+                {/* Modal Gems TM: (Initial + Sum of TM Remaining) - Final / Rate */}
+                <div className="pt-2 border-t border-gray-700/60 space-y-2.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-gray-300">{t('tm_modal_title')}</span>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+
+                  {/* Top row: Modal Awal Gems, Gems Akhir, Harga Gems */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div>
                       <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tm_initial_gems_label')}</label>
                       <NumericInput
                         value={step.tmInitialGems}
                         onChange={(v) => handleGemsChange('tmInitialGems', v)}
-                        allowDecimal={false}
-                        min={0}
-                        placeholder="0"
-                        className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-gray-400 mb-1">{t('tm_remaining_gems_label')}</label>
-                      <NumericInput
-                        value={step.tmRemainingGems}
-                        onChange={(v) => handleGemsChange('tmRemainingGems', v)}
                         allowDecimal={false}
                         min={0}
                         placeholder="0"
@@ -885,7 +932,39 @@ export default function RecipeStep({
                     </div>
                   </div>
 
-                  {(step.tmInitialGems > 0 || step.tmRemainingGems > 0 || step.tmFinalGems > 0 || results.tmGemsCostWL > 0) && (
+                  {/* Sisa Gems per TM Section (Dynamic based on tmMachineCount) */}
+                  <div className="p-2.5 bg-gray-800/70 rounded-xl border border-gray-700/60 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[11px] font-semibold text-gray-300">
+                        {t('tm_remaining_gems_per_tm')} ({tmMachineCount} TM)
+                      </span>
+                      {totalRemainingGems > 0 && tmMachineCount > 1 && (
+                        <span className="text-[10px] font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/25">
+                          {t('tm_total_remaining_badge', { total: formatNumberLocalized(totalRemainingGems) })}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {Array.from({ length: tmMachineCount }).map((_, i) => (
+                        <div key={i}>
+                          <label className="block text-[10px] font-medium text-gray-400 mb-1 truncate">
+                            {tmMachineCount === 1 ? t('tm_remaining_gems_label') : t('tm_single_label', { index: i + 1 })}
+                          </label>
+                          <NumericInput
+                            value={remainingGemsList[i] !== undefined ? remainingGemsList[i] : ''}
+                            onChange={(v) => handleRemainingGemsPerTMChange(i, v)}
+                            allowDecimal={false}
+                            min={0}
+                            placeholder="0"
+                            className="w-full px-2.5 py-1.5 bg-gray-700/80 border border-gray-600 rounded-lg text-white text-xs focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {(step.tmInitialGems > 0 || totalRemainingGems > 0 || step.tmFinalGems > 0 || results.tmGemsCostWL > 0) && (
                     <div className="flex flex-wrap items-center justify-between p-2 bg-gray-750/70 border border-gray-700 rounded-lg text-xs gap-2">
                       <span className="text-gray-400 text-[11px]">
                         {t('tm_used_gems_label')}: <strong className="text-cyan-400">{formatNumberLocalized(results.tmGemsAmount)} gems</strong>
