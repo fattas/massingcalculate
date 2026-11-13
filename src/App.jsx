@@ -61,11 +61,15 @@ export default function App() {
 
       {/* Main App Content */}
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex-1">
-        {activeTab === 'planner' && <MassingPlanner />}
-        {activeTab === 'shopping' && (
+        <div className={activeTab === 'planner' ? 'block' : 'hidden'}>
+          <MassingPlanner />
+        </div>
+        <div className={activeTab === 'shopping' ? 'block' : 'hidden'}>
           <SeedShoppingTracker onNavigateToPlanner={() => setActiveTab('planner')} />
-        )}
-        {activeTab === 'inventory' && <InventoryManager />}
+        </div>
+        <div className={activeTab === 'inventory' ? 'block' : 'hidden'}>
+          <InventoryManager />
+        </div>
       </main>
 
       {/* Footer */}

@@ -29,31 +29,56 @@ export default function MassingPlanner() {
     }
   }, []);
 
-  const updatePlan = (updates) => {
-    setPlan(prev => ({ ...prev, ...updates, updatedAt: new Date().toISOString() }));
+  const updatePlan = (updatesOrFn) => {
+    setPlan(prev => {
+      const updates = typeof updatesOrFn === 'function' ? updatesOrFn(prev) : updatesOrFn;
+      return { ...prev, ...updates, updatedAt: new Date().toISOString() };
+    });
   };
 
   const addStep = () => {
-    updatePlan({ steps: [...plan.steps, createDefaultStep()] });
+    setPlan(prev => ({
+      ...prev,
+      steps: [...(prev.steps || []), createDefaultStep()],
+      updatedAt: new Date().toISOString(),
+    }));
   };
 
-  const updateStep = (index, updatedStep) => {
-    const newSteps = [...plan.steps];
-    newSteps[index] = updatedStep;
-    updatePlan({ steps: newSteps });
+  const updateStep = (index, stepOrFn) => {
+    setPlan(prev => {
+      const currentSteps = prev.steps || [];
+      const currentStep = currentSteps[index] || {};
+      const nextStep = typeof stepOrFn === 'function' ? stepOrFn(currentStep) : { ...currentStep, ...stepOrFn };
+      const newSteps = [...currentSteps];
+      newSteps[index] = nextStep;
+      return {
+        ...prev,
+        steps: newSteps,
+        updatedAt: new Date().toISOString(),
+      };
+    });
   };
 
   const removeStep = (index) => {
-    const newSteps = plan.steps.filter((_, i) => i !== index);
-    updatePlan({ steps: newSteps.length > 0 ? newSteps : [createDefaultStep()] });
+    setPlan(prev => {
+      const filtered = (prev.steps || []).filter((_, i) => i !== index);
+      return {
+        ...prev,
+        steps: filtered.length > 0 ? filtered : [createDefaultStep()],
+        updatedAt: new Date().toISOString(),
+      };
+    });
   };
 
   const handleToggleAllSteps = (isExpanded) => {
-    const newSteps = (plan.steps || []).map((s) => ({
-      ...s,
-      isExpanded,
+    setPlan(prev => ({
+      ...prev,
+      steps: (prev.steps || []).map((s) => ({
+        ...s,
+        isExpanded,
+      })),
+      updatedAt: new Date().toISOString(),
     }));
-    updatePlan({ steps: newSteps });
   };
 
   const handleSavePlan = () => {
@@ -128,25 +153,33 @@ export default function MassingPlanner() {
   };
 
   const duplicateStep = (index) => {
-    const stepToClone = plan.steps[index];
-    const clonedStep = {
-      ...stepToClone,
-      id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
-      name: stepToClone.name ? `${stepToClone.name} (Copy)` : '',
-      isCompleted: false,
-      isExpanded: true,
-      seed1ExtraPurchases: (stepToClone.seed1ExtraPurchases || []).map((p, pIdx) => ({
-        ...p,
-        id: Date.now().toString() + '_p1_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
-      })),
-      seed2ExtraPurchases: (stepToClone.seed2ExtraPurchases || []).map((p, pIdx) => ({
-        ...p,
-        id: Date.now().toString() + '_p2_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
-      })),
-    };
-    const newSteps = [...plan.steps];
-    newSteps.splice(index + 1, 0, clonedStep);
-    updatePlan({ steps: newSteps });
+    setPlan(prev => {
+      const currentSteps = prev.steps || [];
+      const stepToClone = currentSteps[index];
+      if (!stepToClone) return prev;
+      const clonedStep = {
+        ...stepToClone,
+        id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
+        name: stepToClone.name ? `${stepToClone.name} (Copy)` : '',
+        isCompleted: false,
+        isExpanded: true,
+        seed1ExtraPurchases: (stepToClone.seed1ExtraPurchases || []).map((p, pIdx) => ({
+          ...p,
+          id: Date.now().toString() + '_p1_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
+        })),
+        seed2ExtraPurchases: (stepToClone.seed2ExtraPurchases || []).map((p, pIdx) => ({
+          ...p,
+          id: Date.now().toString() + '_p2_' + pIdx + '_' + Math.random().toString(36).substring(2, 6),
+        })),
+      };
+      const newSteps = [...currentSteps];
+      newSteps.splice(index + 1, 0, clonedStep);
+      return {
+        ...prev,
+        steps: newSteps,
+        updatedAt: new Date().toISOString(),
+      };
+    });
   };
 
   return (

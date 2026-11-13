@@ -62,63 +62,79 @@ export default function RecipeStep({
   const totalRemainingGems = remainingGemsList.slice(0, tmMachineCount).reduce((sum, v) => sum + (parseInt(v, 10) || 0), 0);
 
   const handleFieldChange = (field, value) => {
-    onUpdate({ ...step, [field]: value });
+    onUpdate((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleTMCountChange = (v) => {
     const nextCount = Math.max(1, Math.min(parseInt(v, 10) || 1, 50));
-    const nextList = [...remainingGemsList];
-    const sumRemaining = nextList.slice(0, nextCount).reduce((sum, val) => sum + (parseInt(val, 10) || 0), 0);
+    onUpdate((prev) => {
+      const currentList = Array.isArray(prev.tmRemainingGemsList)
+        ? [...prev.tmRemainingGemsList]
+        : (prev.tmRemainingGems ? [prev.tmRemainingGems] : []);
+      const sumRemaining = currentList.slice(0, nextCount).reduce((sum, val) => sum + (parseInt(val, 10) || 0), 0);
 
-    const init = parseInt(step.tmInitialGems, 10) || 0;
-    const fin = parseInt(step.tmFinalGems, 10) || 0;
-    const rate = parseFloat(step.tmGemsRate) || 0;
-    const used = Math.max(0, (init + sumRemaining) - fin);
-    const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
+      const init = parseInt(prev.tmInitialGems, 10) || 0;
+      const fin = parseInt(prev.tmFinalGems, 10) || 0;
+      const rate = parseFloat(prev.tmGemsRate) || 0;
+      const used = Math.max(0, (init + sumRemaining) - fin);
+      const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
 
-    onUpdate({
-      ...step,
-      tmCount: v,
-      tmRemainingGems: sumRemaining,
-      tmGemsAmount: used,
-      tmGemsCostWL: cost,
+      return {
+        ...prev,
+        tmCount: v,
+        tmRemainingGems: sumRemaining,
+        tmGemsAmount: used,
+        tmGemsCostWL: cost,
+      };
     });
   };
 
   const handleGemsChange = (field, val) => {
-    const next = { ...step, [field]: val };
-    const init = field === 'tmInitialGems' ? (parseInt(val, 10) || 0) : (parseInt(step.tmInitialGems, 10) || 0);
-    const rem = totalRemainingGems;
-    const fin = field === 'tmFinalGems' ? (parseInt(val, 10) || 0) : (parseInt(step.tmFinalGems, 10) || 0);
-    const rate = field === 'tmGemsRate' ? (parseFloat(val) || 0) : (parseFloat(step.tmGemsRate) || 0);
+    onUpdate((prev) => {
+      const stepCount = Math.max(1, Math.min(parseInt(prev.tmCount, 10) || 1, 50));
+      const init = field === 'tmInitialGems' ? (parseInt(val, 10) || 0) : (parseInt(prev.tmInitialGems, 10) || 0);
+      const rem = Array.isArray(prev.tmRemainingGemsList) && prev.tmRemainingGemsList.length > 0
+        ? prev.tmRemainingGemsList.slice(0, stepCount).reduce((sum, v) => sum + (parseInt(v, 10) || 0), 0)
+        : (parseInt(prev.tmRemainingGems, 10) || 0);
+      const fin = field === 'tmFinalGems' ? (parseInt(val, 10) || 0) : (parseInt(prev.tmFinalGems, 10) || 0);
+      const rate = field === 'tmGemsRate' ? (parseFloat(val) || 0) : (parseFloat(prev.tmGemsRate) || 0);
 
-    const used = Math.max(0, (init + rem) - fin);
-    const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
-    next.tmGemsAmount = used;
-    next.tmGemsCostWL = cost;
-    onUpdate(next);
+      const used = Math.max(0, (init + rem) - fin);
+      const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
+      return {
+        ...prev,
+        [field]: val,
+        tmGemsAmount: used,
+        tmGemsCostWL: cost,
+      };
+    });
   };
 
   const handleRemainingGemsPerTMChange = (index, val) => {
-    const nextList = [...remainingGemsList];
-    while (nextList.length < tmMachineCount) {
-      nextList.push('');
-    }
-    nextList[index] = val;
-    const sumRemaining = nextList.slice(0, tmMachineCount).reduce((sum, v) => sum + (parseInt(v, 10) || 0), 0);
+    onUpdate((prev) => {
+      const stepCount = Math.max(1, Math.min(parseInt(prev.tmCount, 10) || 1, 50));
+      const currentList = Array.isArray(prev.tmRemainingGemsList)
+        ? [...prev.tmRemainingGemsList]
+        : (prev.tmRemainingGems ? [prev.tmRemainingGems] : []);
+      while (currentList.length < stepCount) {
+        currentList.push('');
+      }
+      currentList[index] = val;
+      const sumRemaining = currentList.slice(0, stepCount).reduce((sum, v) => sum + (parseInt(v, 10) || 0), 0);
 
-    const init = parseInt(step.tmInitialGems, 10) || 0;
-    const fin = parseInt(step.tmFinalGems, 10) || 0;
-    const rate = parseFloat(step.tmGemsRate) || 0;
-    const used = Math.max(0, (init + sumRemaining) - fin);
-    const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
+      const init = parseInt(prev.tmInitialGems, 10) || 0;
+      const fin = parseInt(prev.tmFinalGems, 10) || 0;
+      const rate = parseFloat(prev.tmGemsRate) || 0;
+      const used = Math.max(0, (init + sumRemaining) - fin);
+      const cost = rate > 0 ? parseFloat((used / rate).toFixed(4)) : 0;
 
-    onUpdate({
-      ...step,
-      tmRemainingGemsList: nextList,
-      tmRemainingGems: sumRemaining,
-      tmGemsAmount: used,
-      tmGemsCostWL: cost,
+      return {
+        ...prev,
+        tmRemainingGemsList: currentList,
+        tmRemainingGems: sumRemaining,
+        tmGemsAmount: used,
+        tmGemsCostWL: cost,
+      };
     });
   };
 
@@ -128,82 +144,70 @@ export default function RecipeStep({
       if (field === 'resultItemName' && item.hitsToBreak) {
         updates.hitsPerBlock = item.hitsToBreak;
       }
-      onUpdate({ ...step, ...updates });
+      onUpdate((prev) => ({ ...prev, ...updates }));
     } else {
-      onUpdate({ ...step, [field]: '' });
+      onUpdate((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
   // Seed 1 Extra Purchases handlers
   const handleAddSeed1Extra = () => {
-    const extras = Array.isArray(step.seed1ExtraPurchases) ? step.seed1ExtraPurchases : [];
     const newExtra = {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
       qty: 0,
       price: 0,
       priceFormat: 'perWL',
     };
-    onUpdate({
-      ...step,
-      seed1ExtraPurchases: [...extras, newExtra],
-    });
+    onUpdate((prev) => ({
+      ...prev,
+      seed1ExtraPurchases: [...(prev.seed1ExtraPurchases || []), newExtra],
+    }));
   };
 
   const handleUpdateSeed1Extra = (id, field, value) => {
-    const extras = (step.seed1ExtraPurchases || []).map((p) => {
-      if (p.id === id) {
-        return { ...p, [field]: value };
-      }
-      return p;
-    });
-    onUpdate({
-      ...step,
-      seed1ExtraPurchases: extras,
-    });
+    onUpdate((prev) => ({
+      ...prev,
+      seed1ExtraPurchases: (prev.seed1ExtraPurchases || []).map((p) =>
+        p.id === id ? { ...p, [field]: value } : p
+      ),
+    }));
   };
 
   const handleRemoveSeed1Extra = (id) => {
-    const extras = (step.seed1ExtraPurchases || []).filter((p) => p.id !== id);
-    onUpdate({
-      ...step,
-      seed1ExtraPurchases: extras,
-    });
+    onUpdate((prev) => ({
+      ...prev,
+      seed1ExtraPurchases: (prev.seed1ExtraPurchases || []).filter((p) => p.id !== id),
+    }));
   };
 
   // Seed 2 Extra Purchases handlers
   const handleAddSeed2Extra = () => {
-    const extras = Array.isArray(step.seed2ExtraPurchases) ? step.seed2ExtraPurchases : [];
     const newExtra = {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
       qty: 0,
       price: 0,
       priceFormat: 'perWL',
     };
-    onUpdate({
-      ...step,
-      seed2ExtraPurchases: [...extras, newExtra],
-    });
+    onUpdate((prev) => ({
+      ...prev,
+      seed2ExtraPurchases: [...(prev.seed2ExtraPurchases || []), newExtra],
+    }));
   };
 
   const handleUpdateSeed2Extra = (id, field, value) => {
-    const extras = (step.seed2ExtraPurchases || []).map((p) => {
-      if (p.id === id) {
-        return { ...p, [field]: value };
-      }
-      return p;
-    });
-    onUpdate({
-      ...step,
-      seed2ExtraPurchases: extras,
-    });
+    onUpdate((prev) => ({
+      ...prev,
+      seed2ExtraPurchases: (prev.seed2ExtraPurchases || []).map((p) =>
+        p.id === id ? { ...p, [field]: value } : p
+      ),
+    }));
   };
 
   const handleRemoveSeed2Extra = (id) => {
-    const extras = (step.seed2ExtraPurchases || []).filter((p) => p.id !== id);
-    onUpdate({
-      ...step,
-      seed2ExtraPurchases: extras,
-    });
+    onUpdate((prev) => ({
+      ...prev,
+      seed2ExtraPurchases: (prev.seed2ExtraPurchases || []).filter((p) => p.id !== id),
+    }));
   };
 
   // Calculate costs for Seed 1
@@ -814,11 +818,11 @@ export default function RecipeStep({
                   price={step.fuelPrice || step.fuelCostPerUnit || ''}
                   priceFormat={step.fuelPriceFormat || 'perWL'}
                   onPriceChange={(v) => {
-                    onUpdate({
-                      ...step,
+                    onUpdate((prev) => ({
+                      ...prev,
                       fuelPrice: v,
                       fuelCostPerUnit: v,
-                    });
+                    }));
                   }}
                   onFormatChange={(v) => handleFieldChange('fuelPriceFormat', v)}
                   placeholder={t('fuel_price_placeholder')}
